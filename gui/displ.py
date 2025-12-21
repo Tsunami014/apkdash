@@ -31,7 +31,12 @@ def fix(txt):
     idx = txt.rfind("\020!!")
     if idx != -1:
         txt = txt[idx+3:]
-    return re.sub('^.*\n?.*\020<', '', txt).strip("\n")
+    txt = re.sub('^.*\n?.*\020<', '', txt, flags=re.MULTILINE).lstrip("\n")
+    if txt == '':
+        return ''
+    if txt[-1] == '\n':
+        return txt.rstrip("\n")+"\n"
+    return txt
 
 def toPrintable(txt):
     safe = re.sub('\033\\[[0-9;]+.', '', txt)
@@ -78,8 +83,8 @@ def printScreen(wind):
         wid1 = (size.columns-3)//3
         wid2 = (size.columns-3)-wid1
         print("╭"+"─"*wid1+"┬"+"─"*wid2+"╮")
-        for _ in range(size.lines-2):
-            prt1, sidebuf = popBuf(sidebuf, wid2)
+        for i in range(size.lines-2):
+            prt1, sidebuf = popBuf(sidebuf, wid1)
             prt2, buf = popBuf(buf, wid2)
             if buf.strip(" ") or sidebuf.strip(" "):
                 mxidx = i
