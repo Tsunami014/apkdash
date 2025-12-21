@@ -22,23 +22,23 @@ class Window:
     def _sideprt(self, *args, sep=" ", end="\n"):
         self.sidebuf += sep.join(args)+end
 
-    def update(self):
+    def update(self, char):
         _oldprt = builtins.print
         builtins.print = self._bufprt
-        self._upd()
+        self._upd(char)
         builtins.print = self._sideprt
-        self._updSide()
+        self._updSide(char)
         builtins.print = _oldprt
         self.buf = fix(self.buf)
         self.sidebuf = fix(self.sidebuf)
 
     def _init(self): pass
     def _initSide(self): pass
-    def _upd(self): pass
-    def _updSide(self): pass
+    def _upd(self, char): pass
+    def _updSide(self, char): pass
 
-    def updprint(self):
-        self.update()
+    def updprint(self, char):
+        self.update(char)
         self.print()
 
     def print(self):
