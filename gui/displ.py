@@ -60,35 +60,38 @@ def toPrintable(txt):
         .replace('\020cB', '\033[30m')\
         .replace('\020', '�')
 
-def popBuf(buf: str, wid: int):
-    idx = buf.find("\n")
-    if idx == -1 or wid < idx:
-        return buf[:wid].ljust(wid), buf[wid:]
-    return buf[:idx].ljust(wid), buf[idx+1:]
-
 def printScreen(wind):
     size = shutil.get_terminal_size()
-    buf = toPrintable(wind.buf)
+    buf = wind.mainBuffer
     mxidx = 0
+    print("\033[0;0H", end="")
     if not wind.sidebuf:
+        buf.initialFix(size.columns-2)
         print("╭"+"─"*(size.columns-2)+"╮")
         for i in range(size.lines-2):
-            prt, buf = popBuf(buf, size.columns-2)
-            if buf.strip(" "):
+            prt = buf.popBuf(size.columns-2)
+            if buf:
                 mxidx = i
             print("│"+prt+"│")
-        print("╰"+"─"*(size.columns-2)+"╯", end="\033[0;0H", flush=True)
+        print("╰"+"─"*(size.columns-2)+"╯", end="\033[0;2H", flush=True)
+        wind.sel = 1
     else:
-        sidebuf = toPrintable(wind.sidebuf)
         wid1 = (size.columns-3)//3
         wid2 = (size.columns-3)-wid1
+        sidebuf = wind.sideBuffer
+        sidebuf.initialFix(wid1)
+        buf.initialFix(wid2)
         print("╭"+"─"*wid1+"┬"+"─"*wid2+"╮")
         for i in range(size.lines-2):
-            prt1, sidebuf = popBuf(sidebuf, wid1)
-            prt2, buf = popBuf(buf, wid2)
-            if buf.strip(" ") or sidebuf.strip(" "):
+            prt1 = sidebuf.popBuf(wid1)
+            prt2 = buf.popBuf(wid2)
+            if buf or sidebuf:
                 mxidx = i
             print("│"+prt1+"│"+prt2+"│")
-        print("╰"+"─"*wid1+"┴"+"─"*wid2+"╯", end="\033[0;0H", flush=True)
+        if wind.sel == 0:
+            curspos = 2
+        else:
+            curspos = wid1+3
+        print("╰"+"─"*wid1+"┴"+"─"*wid2+"╯", end=f"\033[0;{curspos}H", flush=True)
     return mxidx
 

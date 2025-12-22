@@ -6,7 +6,7 @@ This is purely for educational purposes to see how apk files work, do not use it
 ## Running
 Ensure you have:
 - An apk file of an app that you have permission from the owner that you can look into it
-- `pip install pyapktool`
+- `pip install pyapktool readchar`
 
 Then run `python3 main.py`
 
