@@ -70,12 +70,13 @@ def printScreen(wind):
     print("\033[0;0H", end="")
     if not wind.sidebuf:
         buf.initialFix(size.columns-2)
-        print("╭"+"─"*(size.columns-2)+"╮")
+        tit = wind.titles[1][:size.columns-2]
+        print("╭"+toPrintable(tit)+"\033[0m─"*(size.columns-2-strlen(tit))+"\033[0m╮")
         for i in range(size.lines-2):
             prt = buf.popBuf(size.columns-2)
             if buf:
                 mxidx = i
-            print("│"+prt+"│")
+            print("│"+prt+"\033[0m│")
         print("╰"+"─"*(size.columns-2)+"╯", end="\033[0;2H", flush=True)
         wind.sel = 1
     else:
@@ -84,13 +85,18 @@ def printScreen(wind):
         sidebuf = wind.sideBuffer
         sidebuf.initialFix(wid1)
         buf.initialFix(wid2)
-        print("╭"+"─"*wid1+"┬"+"─"*wid2+"╮")
+        tit1, tit2 = wind.titles[0][:wid1], wind.titles[1][:wid2]
+        print("╭"+
+              toPrintable(tit1)+"\033[0m─"*(wid1-strlen(tit1))+
+              "\033[0m┬"+
+              toPrintable(tit2)+"\033[0m─"*(wid2-strlen(tit2))+
+              "\033[0m╮")
         for i in range(size.lines-2):
             prt1 = sidebuf.popBuf(wid1)
             prt2 = buf.popBuf(wid2)
             if buf or sidebuf:
                 mxidx = i
-            print("│"+prt1+"│"+prt2+"│")
+            print("│"+prt1+"\033[0m│"+prt2+"\033[0m│")
         if wind.sel == 0:
             curspos = 2
         else:

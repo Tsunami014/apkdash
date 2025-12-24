@@ -89,6 +89,7 @@ class MainWind(ScrlWind):
 
 class CreateWind(MainWind):
     def _init(self):
+        self.titles[1] = "New window"
         for c, a in self.mapp.apps.items():
             print(f"\020b{c}\020R: {a.NAME}")
         return True

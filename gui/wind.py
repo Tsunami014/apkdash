@@ -37,7 +37,7 @@ class ExitCodes(IntEnum):
     """Go to app creation screen"""
 
 class Window:
-    __slots__ = ['buf', 'sidebuf', 'sel', 'delfn']
+    __slots__ = ['buf', 'sidebuf', 'sel', 'delfn', 'titles']
 
     NAME: str
     PRIO: int = 0
@@ -45,6 +45,7 @@ class Window:
     def __init__(self):
         self.buf = ""
         self.sidebuf = ""
+        self.titles = ["", ""]
         self.sel = 0
         self.delfn = lambda code: None
 
@@ -105,6 +106,7 @@ class ScrlWind(Window):
     def __init__(self):
         self.buf = ""
         self.sidebuf = ""
+        self.titles = ["", ""]
         self.sel = 0
 
         _oldprt = builtins.print

@@ -18,6 +18,5 @@ class Test(ScrlWind):
         else:
             print(f"{randint(0,9)}!")
     def _initSide(self):
-        self._updSide()
-    def _updSide(self, k=None):
         print("\020!!Hello!\nThis\nis\na\ntest!")
+
