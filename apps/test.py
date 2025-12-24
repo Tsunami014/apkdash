@@ -2,7 +2,10 @@ from readchar import key
 from gui.wind import ScrlWind
 from random import randint
 
+__apps__ = ['Test']
+
 class Test(ScrlWind):
+    NAME = "Test"
     def _init(self):
         print("Random number:")
         self._upd('')

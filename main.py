@@ -1,8 +1,11 @@
 import readchar
-from test import Test
+from app import MainApp
 
-t = Test()
-t.print()
+main = MainApp()
+main.wind.print()
 while True:
-    t.updprint(readchar.readkey())
+    main.wind.updprint(readchar.readkey())
+    if main.reprint:
+        main.wind.print()
+        main.reprint = False
 

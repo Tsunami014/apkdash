@@ -38,6 +38,9 @@ def fix(txt):
         return txt.rstrip("\n")+"\n"
     return txt
 
+def strlen(txt):
+    return len(re.sub('\020(?:[+\\-*~birR]|c[rgbcmyWGB]|)', '', txt))
+
 def toPrintable(txt):
     safe = re.sub('\033\\[[0-9;]+.', '', txt)
     return safe\

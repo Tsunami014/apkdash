@@ -1,11 +1,12 @@
-from .displ import fix, toPrintable, printScreen
+from .displ import fix, strlen, toPrintable, printScreen
+from enum import IntEnum
 from readchar import key
 import builtins
 
 class Buffer:
     __slots__ = ['txt', 'scroll']
     def __init__(self, txt, scroll=0):
-        self.txt = toPrintable(txt)
+        self.txt = txt
         self.scroll = scroll
 
     def initialFix(self, wid: int):
@@ -18,21 +19,34 @@ class Buffer:
 
     def popBuf(self, wid: int):
         idx = self.txt.find("\n")
-        if idx == -1 or wid < idx:
-            out = self.txt[:wid].ljust(wid)
+        ridx = strlen(self.txt[:idx])
+        if idx == -1 or wid < ridx:
+            out = self.txt[:wid]
             self.txt = self.txt[wid:]
-            return out
-        out = self.txt[:idx].ljust(wid)
-        self.txt = self.txt[idx+1:]
-        return out
+        else:
+            out = self.txt[:idx]
+            self.txt = self.txt[idx+1:]
+        return toPrintable(out) + " "*(wid-strlen(out))
+
+class ExitCodes(IntEnum):
+    EXCEPTION = 0
+    """An exception occurred"""
+    PICK = 1
+    """Go to app picker"""
+    CREATE = 2
+    """Go to app creation screen"""
 
 class Window:
-    __slots__ = ['buf', 'sidebuf', 'sel']
+    __slots__ = ['buf', 'sidebuf', 'sel', 'delfn']
+
+    NAME: str
+    PRIO: int = 0
 
     def __init__(self):
         self.buf = ""
         self.sidebuf = ""
         self.sel = 0
+        self.delfn = lambda code: None
 
         _oldprt = builtins.print
         builtins.print = self._bufprt
@@ -52,6 +66,11 @@ class Window:
         if k == key.TAB or k == '\033[Z': # Shift+tab
             self.sel = 1 - self.sel
             return
+        if k == ',':
+            self.delfn(ExitCodes.CREATE)
+            return
+        if k == ' ':
+            self.delfn(ExitCodes.PICK)
         _oldprt = builtins.print
         builtins.print = self._bufprt
         self._upd(k if self.sel == 1 else None)
