@@ -63,6 +63,12 @@ def toPrintable(txt):
         .replace('\020cB', '\033[30m')\
         .replace('\020', '�')
 
+def fixTitle(tit, wid):
+    if tit == "":
+        return "─"*wid
+    ntit = tit[:wid-2]
+    return " "+toPrintable(ntit)+"\033[0m "+"─"*(wid-strlen(ntit))
+
 def printScreen(wind):
     size = shutil.get_terminal_size()
     buf = wind.mainBuffer
@@ -70,8 +76,7 @@ def printScreen(wind):
     print("\033[0;0H", end="")
     if not wind.sidebuf:
         buf.initialFix(size.columns-2)
-        tit = wind.titles[1][:size.columns-2]
-        print("╭"+toPrintable(tit)+"\033[0m─"*(size.columns-2-strlen(tit))+"\033[0m╮")
+        print("╭"+fixTitle(wind.titles[1], size.columns-4)+"╮")
         for i in range(size.lines-2):
             prt = buf.popBuf(size.columns-2)
             if buf:
@@ -85,12 +90,7 @@ def printScreen(wind):
         sidebuf = wind.sideBuffer
         sidebuf.initialFix(wid1)
         buf.initialFix(wid2)
-        tit1, tit2 = wind.titles[0][:wid1], wind.titles[1][:wid2]
-        print("╭"+
-              toPrintable(tit1)+"\033[0m─"*(wid1-strlen(tit1))+
-              "\033[0m┬"+
-              toPrintable(tit2)+"\033[0m─"*(wid2-strlen(tit2))+
-              "\033[0m╮")
+        print("╭"+fixTitle(wind.titles[0], wid1)+"┬"+fixTitle(wind.titles[1], wid2)+"╮")
         for i in range(size.lines-2):
             prt1 = sidebuf.popBuf(wid1)
             prt2 = buf.popBuf(wid2)
