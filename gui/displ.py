@@ -39,11 +39,23 @@ def fix(txt):
     return txt
 
 def strlen(txt):
-    return len(re.sub('\020(?:[+\\-*~birR]|c[rgbcmyWGB]|)', '', txt))
+    return len(re.sub(r'\020(?:[+\-*~birR]|c[rgbcmyWGB]|)|\033\[[0-9;]*.', '', txt).replace('\020', ' ').replace('\033', ''))
 
 def toPrintable(txt):
-    safe = re.sub('\020(?:.|c.)$', '',
-        re.sub('\033\\[[0-9;]+.', '', txt).replace('\033', ''), 1)
+    safe = re.sub('\020(?:.|c.)$', '', txt, 1)
+
+    # Get rid of regular \033s but keep ones relating to colour or bold/stuff (for terminal outputs)
+    inner = re.compile(r'[\[;](0|39|49|[0-9]|2[1-9]|(?:3|4|9|10)[0-7]|[34]8;(?:5;[0-9]+|2;(?:[0-9]+;){3}))[;m]')
+    def repl(match):
+        if match.group(0)[-1] != 'm':
+            return ''
+        params = match.group(1)
+        kept = inner.findall(params)
+        if not kept:
+            return ''
+        return '\033[' + ';'.join(kept) + 'm'
+    safe = re.sub(r'\033(\[[0-9;]*.)', repl, safe).replace('\033', '�')
+
     return safe\
         .replace('\020+', '[\03392m+\033[39m] ')\
         .replace('\020-', '[\03394m-\033[39m] ')\
