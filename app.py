@@ -29,9 +29,8 @@ def loadApps(name):
     return o
 
 class MainApp:
-    __slots__ = ['wind', 'apps', 'reprint']
+    __slots__ = ['wind', 'apps']
     def __init__(self):
-        self.reprint = False
         self.apps = {}
         apps = []
         for f in os.listdir(os.path.abspath(__file__+"/../apps/")):
@@ -72,14 +71,21 @@ class MainApp:
             typ = CreateWind
         self._setMainWind(typ)
 
+    def endPref(self):
+        return ""
+    def endSuff(self):
+        pth = os.getcwd()
+        home = os.path.expanduser("~")
+        if pth.startswith(home):
+            return os.path.join("~", os.path.relpath(pth, home))
+        return pth
+
     def setWind(self, cls):
         self.wind = cls()
         self.wind.delfn = self._onWindDel
-        self.reprint = True
     def _setMainWind(self, cls):
         self.wind = cls(self)
         self.wind.delfn = self._onWindDel
-        self.reprint = True
 
 class MainWind(ScrlWind):
     __slots__ = ['mapp']
@@ -89,7 +95,7 @@ class MainWind(ScrlWind):
 
 class CreateWind(MainWind):
     def _init(self):
-        self.titles[1] = "New window"
+        self.title = "New window"
         for c, a in self.mapp.apps.items():
             print(f"\020b{c}\020R: {a.NAME}")
         return True

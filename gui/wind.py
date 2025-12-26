@@ -37,7 +37,7 @@ class ExitCodes(IntEnum):
     """Go to app creation screen"""
 
 class Window:
-    __slots__ = ['buf', 'sidebuf', 'sel', 'delfn', 'titles']
+    __slots__ = ['_cur', 'buf', 'sidebuf', 'sel', 'delfn', 'titles']
 
     NAME: str
     PRIO: int = 0
@@ -51,8 +51,10 @@ class Window:
 
         _oldprt = builtins.print
         builtins.print = self._bufprt
+        self._cur = 1
         self._init()
         builtins.print = self._sideprt
+        self._cur = 0
         self._initSide()
         builtins.print = _oldprt
         self.buf = fix(self.buf)
@@ -62,6 +64,16 @@ class Window:
         self.buf += sep.join(args)+end
     def _sideprt(self, *args, sep=" ", end="\n"):
         self.sidebuf += sep.join(args)+end
+
+    @property
+    def title(self):
+        return self.titles[self._cur]
+    @title.setter
+    def title(self, new):
+        self.titles[self._cur] = new
+    @property
+    def selecting(self):
+        return self.sel == self._cur
 
     def update(self, k):
         if k == key.TAB or k == '\033[Z': # Shift+tab
@@ -74,8 +86,10 @@ class Window:
             self.delfn(ExitCodes.PICK)
         _oldprt = builtins.print
         builtins.print = self._bufprt
+        self._cur = 1
         self._upd(k if self.sel == 1 else None)
         builtins.print = self._sideprt
+        self._cur = 0
         self._updSide(k if self.sel == 0 else None)
         builtins.print = _oldprt
         self.buf = fix(self.buf)
@@ -93,13 +107,6 @@ class Window:
     def sideBuffer(self):
         return Buffer(self.sidebuf)
 
-    def updprint(self, k):
-        self.update(k)
-        self.print()
-
-    def print(self):
-        printScreen(self)
-
 class ScrlWind(Window):
     __slots__ = ['mainScrl', 'sideScrl']
 
@@ -111,11 +118,13 @@ class ScrlWind(Window):
 
         _oldprt = builtins.print
         builtins.print = self._bufprt
+        self._cur = 1
         if self._init():
             self.mainScrl = 0
         else:
             self.mainScrl = None
         builtins.print = self._sideprt
+        self._cur = 0
         if self._initSide():
             self.sideScrl = 0
         else:

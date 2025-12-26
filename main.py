@@ -1,11 +1,9 @@
 import readchar
 from app import MainApp
+from gui.displ import printScreen
 
 main = MainApp()
-main.wind.print()
+printScreen(main)
 while True:
-    main.wind.updprint(readchar.readkey())
-    if main.reprint:
-        main.wind.print()
-        main.reprint = False
-
+    main.wind.update(readchar.readkey())
+    printScreen(main)

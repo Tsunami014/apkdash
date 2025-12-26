@@ -42,7 +42,8 @@ def strlen(txt):
     return len(re.sub('\020(?:[+\\-*~birR]|c[rgbcmyWGB]|)', '', txt))
 
 def toPrintable(txt):
-    safe = re.sub('\033\\[[0-9;]+.', '', txt)
+    safe = re.sub('\020(?:.|c.)$', '',
+        re.sub('\033\\[[0-9;]+.', '', txt).replace('\033', ''), 1)
     return safe\
         .replace('\020+', '[\03392m+\033[39m] ')\
         .replace('\020-', '[\03394m-\033[39m] ')\
@@ -63,26 +64,42 @@ def toPrintable(txt):
         .replace('\020cB', '\033[30m')\
         .replace('\020', '�')
 
-def fixTitle(tit, wid):
+def fixTitle(tit, wid, right=False):
     if tit == "":
         return "─"*wid
-    ntit = tit[:wid-2]
-    return " "+toPrintable(ntit)+"\033[0m "+"─"*(wid-strlen(ntit))
+    if len(tit) > wid-5:
+        if right:
+            ntit = "..."+tit[-wid+5:]
+        else:
+            ntit = tit[:wid-5]+"..."
+    else:
+        ntit = tit
+    if right:
+        return "─"*(wid-strlen(ntit)-2)+" "+toPrintable(ntit)+"\033[0m "
+    return " "+toPrintable(ntit)+"\033[0m "+"─"*(wid-strlen(ntit)-2)
 
-def printScreen(wind):
+def printScreen(app):
+    wind = app.wind
     size = shutil.get_terminal_size()
     buf = wind.mainBuffer
     mxidx = 0
     print("\033[0;0H", end="")
     if not wind.sidebuf:
-        buf.initialFix(size.columns-2)
-        print("╭"+fixTitle(wind.titles[1], size.columns-4)+"╮")
+        wid = size.columns-2
+        buf.initialFix(wid)
+        print("╭"+fixTitle(wind.titles[1], wid)+"╮")
         for i in range(size.lines-2):
-            prt = buf.popBuf(size.columns-2)
+            prt = buf.popBuf(wid)
             if buf:
                 mxidx = i
             print("│"+prt+"\033[0m│")
-        print("╰"+"─"*(size.columns-2)+"╯", end="\033[0;2H", flush=True)
+        wid1 = wid//2
+        wid2 = wid-wid1
+        if wind.titles[1] != "":
+            curspos = 3
+        else:
+            curspos = 2
+        print("╰"+fixTitle(app.endPref(), wid1)+fixTitle(app.endSuff(), wid2, True)+"╯", end=f"\033[0;{curspos}H", flush=True)
         wind.sel = 1
     else:
         wid1 = (size.columns-3)//3
@@ -98,9 +115,15 @@ def printScreen(wind):
                 mxidx = i
             print("│"+prt1+"\033[0m│"+prt2+"\033[0m│")
         if wind.sel == 0:
-            curspos = 2
+            if wind.titles[0] != "":
+                curspos = 3
+            else:
+                curspos = 2
         else:
-            curspos = wid1+3
-        print("╰"+"─"*wid1+"┴"+"─"*wid2+"╯", end=f"\033[0;{curspos}H", flush=True)
+            if wind.titles[1] != "":
+                curspos = wid1+4
+            else:
+                curspos = wid1+3
+        print("╰"+fixTitle(app.endPref(), wid1)+"┴"+fixTitle(app.endSuff(), wid2, True)+"╯", end=f"\033[0;{curspos}H", flush=True)
     return mxidx
 
