@@ -1,5 +1,6 @@
 from thread import Thread, Progress
 import requests
+import shutil
 import json
 import os
 
@@ -8,11 +9,19 @@ if not os.path.exists(_toolpth):
     os.mkdir(_toolpth)
 
 class Download(Thread):
-    def __init__(self, wind, fname, url):
-        self.pth = _toolpth+"/"+fname
-        skip = os.path.exists(self.pth)
-        if not skip:
-            print(f"\020~Could not find {fname} in tools, downloading from {url}...")
+    def __init__(self, wind, cmd, fname, url):
+        pth = shutil.which(cmd)
+        if pth is not None:
+            self.pth = pth
+            skip = True
+            print(f"\020+Found {cmd} in the path, using that.")
+        else:
+            self.pth = _toolpth+"/"+fname
+            skip = os.path.exists(self.pth)
+            if skip:
+                print("\020+Tool already downloaded:", fname)
+            else:
+                print(f"\020~Could not find {fname} in tools, downloading from {url}...")
         super().__init__(wind, url, skip=skip)
 
     def main(self, print, url):

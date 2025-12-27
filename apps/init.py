@@ -8,7 +8,7 @@ class Init(ScrlWind):
     NAME = "Init"
     def _init(self):
         self.title = "Initialise"
-        self.apktool = GithubDownload(self, "apktool.jar", "https://api.github.com/repos/iBotPeaches/Apktool/releases/latest")
+        self.apktool = GithubDownload(self, "apktool", "apktool.jar", "https://api.github.com/repos/iBotPeaches/Apktool/releases/latest")
         self.apktool.start()
         return True
     def _upd(self, k=None):

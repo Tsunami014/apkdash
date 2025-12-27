@@ -58,7 +58,7 @@ class Thread:
         return self.t is None or not self.t.is_alive()
 
     def _target(self, *args):
-        self.main(self._print, *args)
+        self.main(self._printLock, *args)
         with Lock:
             self.t = None # So self.done is True
             self._end()
@@ -67,6 +67,7 @@ class Thread:
         oldprt = builtins.print
         oldcur = self._wind._cur
         self._wind._cur = self.side
+        builtins.print = self._print
         if self.side == 1:
             self._wind._upd()
         else:
@@ -78,8 +79,10 @@ class Thread:
         pass
 
     def _print(self, *args, upd=True, **kwargs):
+        self._prt(*args, **kwargs)
+        if upd and main.wind is self._wind:
+            main.print()
+    def _printLock(self, *args, **kwargs):
         with Lock:
-            self._prt(*args, **kwargs)
-            if upd and main.wind is self._wind:
-                main.print()
+            self._print(*args, **kwargs)
 
