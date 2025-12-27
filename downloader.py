@@ -25,19 +25,35 @@ class Download(Thread):
         super().__init__(wind, url, skip=skip)
 
     def main(self, print, url):
-        response = requests.get(url, stream=True)
+        headers = {}
+        mode = 'wb'
+        downloaded = 0
+
+        if os.path.exists(self.pth+".tmp"):
+            print("\020~Found partial download, attempting to continue...")
+            downloaded = os.path.getsize(self.pth + ".tmp")
+            headers['Range'] = f"bytes={downloaded}-"
+            mode = 'ab'
+        response = requests.get(url, stream=True, headers=headers)
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError as e:
             print(f"\020-Failed downloading {url}!\n  {e}")
             return
+        if mode == 'ab' and response.status_code != 206: # Server does not support partial complete downloading
+            print("\020*Server does not support partial downloading, fully retrying...")
+            os.remove(self.pth+".tmp")
+            mode = 'wb'
+            downloaded = 0
 
-        p = Progress(self, int(response.headers.get('Content-Length', 0)))
-        with open(self.pth, 'wb') as file:
+        p = Progress(self, int(response.headers.get('Content-Length', 0)) + downloaded, downloaded)
+        with open(self.pth+".tmp", mode) as file:
             for chunk in response.iter_content(chunk_size=8192):
                 file.write(chunk)
                 p(len(chunk))
         p.end()
+
+        shutil.move(self.pth+".tmp", self.pth)
 
         print("\020+Successfully downloaded!")
 
