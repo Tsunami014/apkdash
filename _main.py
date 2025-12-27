@@ -1,6 +1,8 @@
 if 'main' not in globals():
     from app import MainApp
     from gui.wind import ScrlWind
+    from builtins import print as origPrt
+    from readchar import key
     main = MainApp()
 
     class CreateWind(ScrlWind):
@@ -10,6 +12,9 @@ if 'main' not in globals():
                 print(f"\020b{c}\020R: {a.NAME}")
             return True
         def _upd(self, k=None):
+            if k == '\x03' or k == key.ESC or k == key.ESC+key.ESC:
+                origPrt("\033[2J", end="", flush=True)
+                quit()
             if k in main.apps.keys():
                 main.setWind(main.apps[k])
                 return

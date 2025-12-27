@@ -3,11 +3,11 @@ from thread import Lock
 import readchar
 
 main.print()
-try:
-    while True:
+while True:
+    try:
         k = readchar.readkey()
-        with Lock:
-            main.wind.update(k)
-        main.print()
-except KeyboardInterrupt:
-    print("\033[2J", end="", flush=True)
+    except KeyboardInterrupt:
+        k = '\x03'
+    with Lock:
+        main.wind.update(k)
+    main.print()

@@ -1,4 +1,3 @@
-from readchar import key
 from gui.wind import ScrlWind
 from downloader import GithubDownload
 

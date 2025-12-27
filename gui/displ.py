@@ -141,6 +141,10 @@ def printScreen(app):
             print("│"+prt+"\033[0m│")
         c = "─"
         wind.sel = 1
+        if wind.titles[1] != "":
+            curspos = 3
+        else:
+            curspos = 2
     else:
         sidebuf = wind.sideBuffer
         sidebuf.initialFix(wid1)
@@ -153,16 +157,16 @@ def printScreen(app):
                 mxidx = i
             print("│"+prt1+"\033[0m│"+prt2+"\033[0m│")
         c = "┴"
-    if wind.sel == 0:
-        if wind.titles[0] != "":
-            curspos = 3
+        if wind.sel == 0:
+            if wind.titles[0] != "":
+                curspos = 3
+            else:
+                curspos = 2
         else:
-            curspos = 2
-    else:
-        if wind.titles[1] != "":
-            curspos = wid1+4
-        else:
-            curspos = wid1+3
+            if wind.titles[1] != "":
+                curspos = wid1+4
+            else:
+                curspos = wid1+3
     print("╰"+fixTitle(app.endPref(), wid1)+c+fixTitle(app.endSuff(), wid2, True)+"╯", end=f"\033[0;{curspos}H", flush=True)
     return mxidx
 
