@@ -38,29 +38,59 @@ def fix(txt):
         return txt.rstrip("\n")+"\n"
     return txt
 
+FANCY = re.compile(r'\020[+\-*~]')
+REG = re.compile(r'\020(?:[birR]|c[rgbcmyWGB])|\033\[[0-9;]*.')
+END = re.compile('\020(?:.|c.)$|\033[0-9;].$')
 def strlen(txt):
-    return len(re.sub(r'\020(?:[+\-*~birR]|c[rgbcmyWGB]|)|\033\[[0-9;]*.', '', txt).replace('\020', ' ').replace('\033', ''))
+    return len(
+        re.sub(REG, '',
+            re.sub(FANCY, '    ', 
+                re.sub(END, '', txt)
+        )).replace('\020', ' ').replace('\033', ' '))
 
+def strcut(txt, wid):
+    if txt == '':
+        return '', ''
+    out = ''
+    i = 0
+    lastln = 0
+    lastout = ''
+    while i < len(txt):
+        ln = strlen(out)
+        if ln == wid:
+            lastout = out
+            break
+        if ln > wid:
+            break
+        if ln != lastln:
+            lastln = ln
+            lastout = out
+        out += txt[i]
+        i += 1
+    return lastout, txt[len(lastout):]
+
+_inner = re.compile(r'[\[;](0|39|49|[0-9]|2[1-9]|(?:3|4|9|10)[0-7]|[34]8;(?:5;[0-9]+|2;(?:[0-9]+;){3}))[;m]')
+_ansi = re.compile(r'\033(\[[0-9;]*.)')
 def toPrintable(txt):
-    safe = re.sub('\020(?:.|c.)$', '', txt, 1)
+    # Remove extra sequences at the end of the string
+    safe = re.sub(END, '', txt)
 
     # Get rid of regular \033s but keep ones relating to colour or bold/stuff (for terminal outputs)
-    inner = re.compile(r'[\[;](0|39|49|[0-9]|2[1-9]|(?:3|4|9|10)[0-7]|[34]8;(?:5;[0-9]+|2;(?:[0-9]+;){3}))[;m]')
     def repl(match):
         if match.group(0)[-1] != 'm':
             return ''
         params = match.group(1)
-        kept = inner.findall(params)
+        kept = _inner.findall(params)
         if not kept:
             return ''
         return '\033[' + ';'.join(kept) + 'm'
-    safe = re.sub(r'\033(\[[0-9;]*.)', repl, safe).replace('\033', '�')
+    safe = re.sub(_ansi, repl, safe).replace('\033', '�')
 
     return safe\
-        .replace('\020+', '[\03392m+\033[39m] ')\
-        .replace('\020-', '[\03394m-\033[39m] ')\
-        .replace('\020*', '[\03393m*\033[39m] ')\
-        .replace('\020~', '[\03395m~\033[39m] ')\
+        .replace('\020+', '[\033[32m+\033[39m] ')\
+        .replace('\020-', '[\033[34m-\033[39m] ')\
+        .replace('\020*', '[\033[33m*\033[39m] ')\
+        .replace('\020~', '[\033[35m~\033[39m] ')\
         .replace('\020b', '\033[1m')\
         .replace('\020i', '\033[7m')\
         .replace('\020r', '\033[39m')\
@@ -90,52 +120,49 @@ def fixTitle(tit, wid, right=False):
         return "─"*(wid-strlen(ntit)-2)+" "+toPrintable(ntit)+"\033[0m "
     return " "+toPrintable(ntit)+"\033[0m "+"─"*(wid-strlen(ntit)-2)
 
+def getSizings():
+    size = shutil.get_terminal_size()
+    wid1 = (size.columns-3)//3
+    return size.columns-2, size.lines-2, wid1, (size.columns-3)-wid1
+
 def printScreen(app):
     wind = app.wind
-    size = shutil.get_terminal_size()
     buf = wind.mainBuffer
     mxidx = 0
+    w, h, wid1, wid2, = getSizings()
     print("\033[0;0H", end="")
     if not wind.sidebuf:
-        wid = size.columns-2
-        buf.initialFix(wid)
-        print("╭"+fixTitle(wind.titles[1], wid)+"╮")
-        for i in range(size.lines-2):
-            prt = buf.popBuf(wid)
+        buf.initialFix(w)
+        print("╭"+fixTitle(wind.titles[1], w)+"╮")
+        for i in range(h):
+            prt = buf.popBuf(w)
             if buf:
                 mxidx = i
             print("│"+prt+"\033[0m│")
-        wid1 = wid//2
-        wid2 = wid-wid1
-        if wind.titles[1] != "":
-            curspos = 3
-        else:
-            curspos = 2
-        print("╰"+fixTitle(app.endPref(), wid1)+fixTitle(app.endSuff(), wid2, True)+"╯", end=f"\033[0;{curspos}H", flush=True)
+        c = "─"
         wind.sel = 1
     else:
-        wid1 = (size.columns-3)//3
-        wid2 = (size.columns-3)-wid1
         sidebuf = wind.sideBuffer
         sidebuf.initialFix(wid1)
         buf.initialFix(wid2)
         print("╭"+fixTitle(wind.titles[0], wid1)+"┬"+fixTitle(wind.titles[1], wid2)+"╮")
-        for i in range(size.lines-2):
+        for i in range(h):
             prt1 = sidebuf.popBuf(wid1)
             prt2 = buf.popBuf(wid2)
             if buf or sidebuf:
                 mxidx = i
             print("│"+prt1+"\033[0m│"+prt2+"\033[0m│")
-        if wind.sel == 0:
-            if wind.titles[0] != "":
-                curspos = 3
-            else:
-                curspos = 2
+        c = "┴"
+    if wind.sel == 0:
+        if wind.titles[0] != "":
+            curspos = 3
         else:
-            if wind.titles[1] != "":
-                curspos = wid1+4
-            else:
-                curspos = wid1+3
-        print("╰"+fixTitle(app.endPref(), wid1)+"┴"+fixTitle(app.endSuff(), wid2, True)+"╯", end=f"\033[0;{curspos}H", flush=True)
+            curspos = 2
+    else:
+        if wind.titles[1] != "":
+            curspos = wid1+4
+        else:
+            curspos = wid1+3
+    print("╰"+fixTitle(app.endPref(), wid1)+c+fixTitle(app.endSuff(), wid2, True)+"╯", end=f"\033[0;{curspos}H", flush=True)
     return mxidx
 

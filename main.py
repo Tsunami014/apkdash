@@ -1,9 +1,13 @@
+from _main import main
+from thread import Lock
 import readchar
-from app import MainApp
-from gui.displ import printScreen
 
-main = MainApp()
-printScreen(main)
-while True:
-    main.wind.update(readchar.readkey())
-    printScreen(main)
+main.print()
+try:
+    while True:
+        k = readchar.readkey()
+        with Lock:
+            main.wind.update(k)
+        main.print()
+except KeyboardInterrupt:
+    print("\033[2J", end="", flush=True)

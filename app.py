@@ -1,8 +1,22 @@
 from gui.wind import Window, ScrlWind, ExitCodes
-from readchar import key
-from log import log
+from gui.displ import printScreen
+import log
 import importlib
 import os
+
+class LogDispl(ScrlWind):
+    NAME = "Main App Logs"
+    def _init(self):
+        self.title = "Main App Logs (not for individual windows)"
+        self._upd()
+        return True
+    def _upd(self, k=None):
+        print("\020!!")
+        if not log.LOGS:
+            print("No logs")
+        else:
+            for lg in log.LOGS:
+                print(lg)
 
 def loadApps(name):
     if name == '__pycache__':
@@ -11,27 +25,29 @@ def loadApps(name):
     try:
         mod = importlib.import_module("apps."+modname, __name__)
     except Exception as e:
-        log("Exception occurred loading module `apps.", modname, "`: ", e)
+        log.error("Exception occurred loading module `apps.", modname, "`: ", e)
         return []
     if not hasattr(mod, '__apps__'):
-        log("Could not find __apps__ in module `apps.", modname, "`")
+        log.error("Could not find __apps__ in module `apps.", modname, "`")
         return []
     o = []
     for a in mod.__apps__:
         got = getattr(mod, a, None)
         if got is None:
-            log("Object `", a, "` in module `apps.", modname, "` does not exist!")
+            log.error("Object `", a, "` in module `apps.", modname, "` does not exist!")
         else:
             if issubclass(got, Window):
                 o.append(got)
             else:
-                log("Object `", a, "` in module `apps.", modname, "` is not a Window!")
+                log.error("Object `", a, "` in module `apps.", modname, "` is not a Window!")
     return o
 
 class MainApp:
-    __slots__ = ['wind', 'apps']
+    __slots__ = ['wind', 'apps', '_createWind']
     def __init__(self):
-        self.apps = {}
+        self.apps = {'`': LogDispl}
+
+    def _initialise(self, crwind):
         apps = []
         for f in os.listdir(os.path.abspath(__file__+"/../apps/")):
             apps.extend(loadApps(f))
@@ -59,17 +75,19 @@ class MainApp:
                         done = True
                         break
             if not done:
-                log("Too many apps, could not find any characters avaliable!")
+                log.error("Too many apps, could not find any characters avaliable!")
 
-        self._setMainWind(CreateWind)
+        self._createWind = crwind
+        self.setWind(crwind)
+
+    def print(self):
+        printScreen(self)
                     
 
     def _onWindDel(self, code):
-        if code == ExitCodes.PICK:
-            typ = None
-        else:
-            typ = CreateWind
-        self._setMainWind(typ)
+        if code == ExitCodes.CREATE:
+            typ = self._createWind
+        self.setWind(typ)
 
     def endPref(self):
         return ""
@@ -83,25 +101,4 @@ class MainApp:
     def setWind(self, cls):
         self.wind = cls()
         self.wind.delfn = self._onWindDel
-    def _setMainWind(self, cls):
-        self.wind = cls(self)
-        self.wind.delfn = self._onWindDel
-
-class MainWind(ScrlWind):
-    __slots__ = ['mapp']
-    def __init__(self, mapp):
-        self.mapp = mapp
-        super().__init__()
-
-class CreateWind(MainWind):
-    def _init(self):
-        self.title = "New window"
-        for c, a in self.mapp.apps.items():
-            print(f"\020b{c}\020R: {a.NAME}")
-        return True
-    def _upd(self, k=None):
-        if k in self.mapp.apps.keys():
-            self.mapp.setWind(self.mapp.apps[k])
-            return
-        super()._upd(k)
 

@@ -1,4 +1,4 @@
-from .displ import fix, strlen, toPrintable, printScreen
+from .displ import fix, strlen, strcut, toPrintable, printScreen
 from enum import IntEnum
 from readchar import key
 import builtins
@@ -21,8 +21,7 @@ class Buffer:
         idx = self.txt.find("\n")
         ridx = strlen(self.txt[:idx])
         if idx == -1 or wid < ridx:
-            out = self.txt[:wid]
-            self.txt = self.txt[wid:]
+            out, self.txt = strcut(self.txt, wid)
         else:
             out = self.txt[:idx]
             self.txt = self.txt[idx+1:]
@@ -31,9 +30,7 @@ class Buffer:
 class ExitCodes(IntEnum):
     EXCEPTION = 0
     """An exception occurred"""
-    PICK = 1
-    """Go to app picker"""
-    CREATE = 2
+    CREATE = 1
     """Go to app creation screen"""
 
 class Window:
@@ -61,9 +58,9 @@ class Window:
         self.sidebuf = fix(self.sidebuf)
 
     def _bufprt(self, *args, sep=" ", end="\n"):
-        self.buf += sep.join(args)+end
+        self.buf += sep.join(str(i) for i in args)+end
     def _sideprt(self, *args, sep=" ", end="\n"):
-        self.sidebuf += sep.join(args)+end
+        self.sidebuf += sep.join(str(i) for i in args)+end
 
     @property
     def title(self):
@@ -102,9 +99,11 @@ class Window:
 
     @property
     def mainBuffer(self):
+        self.buf = fix(self.buf)
         return Buffer(self.buf)
     @property
     def sideBuffer(self):
+        self.sidebuf = fix(self.sidebuf)
         return Buffer(self.sidebuf)
 
 class ScrlWind(Window):
@@ -159,8 +158,10 @@ class ScrlWind(Window):
 
     @property
     def mainBuffer(self):
+        self.buf = fix(self.buf)
         return Buffer(self.buf, self.mainScrl or 0)
     @property
     def sideBuffer(self):
+        self.sidebuf = fix(self.sidebuf)
         return Buffer(self.sidebuf, self.sideScrl or 0)
 
