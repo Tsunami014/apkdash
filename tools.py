@@ -1,4 +1,5 @@
 from thread import Thread, Progress
+import subprocess
 import platform
 import requests
 import shutil
@@ -13,6 +14,37 @@ if not os.path.exists(_toolpth):
     os.mkdir(_toolpth)
 if not os.path.exists(_dwnldpth):
     os.mkdir(_dwnldpth)
+
+class Runner(Thread):
+    def __init__(self, t: 'Tool', *args):
+        self.tool = t
+        self.ret = None
+        super().__init__(t._wind, *args)
+        self.start()
+    def main(self, print, *cmd):
+        main = self.tool._run_args(print)
+        if main is None:
+            print(f"\020-Could not find run args for tool {self.tool.tool['name']}!")
+            return
+        process = subprocess.Popen(
+            main+list(cmd),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1  # Line-buffered
+        )
+
+        # Read line by line
+        for line in process.stdout:
+            print(line, end="")
+
+        process.wait()
+
+        self.ret = process.returncode
+
+class ToolRunner(Runner):
+    def __init__(self, wind, name, *args):
+        super().__init__(Tool(wind, name), *args)
 
 class Tool(Thread):
     def __init__(self, wind, name):
@@ -32,7 +64,7 @@ class Tool(Thread):
             elif s == "Darwin":
                 nam = "mac"
             else:
-                print(f"\020-Unsupported OS: {s}. Please install Java separately and ensure `java` is in the path.")
+                print(f"\020-Unsupported OS when installing java: {s}. Please install Java separately and ensure `java` is in the path.")
                 return super().__init__(wind, skip=True)
             m = platform.machine().lower()
             if m in ("x86_64", "amd64"):
@@ -40,7 +72,7 @@ class Tool(Thread):
             elif m in ("arm64", "aarch64"):
                 arch = "aarch64"
             else:
-                print(f"\020-Unsupported architecture: {m}. Please install Java separately and ensure `java` is in the path.")
+                print(f"\020-Unsupported architecture when installing java: {m}. Please install Java separately and ensure `java` is in the path.")
                 return super().__init__(wind, skip=True)
             
             self.tool['url'] = self.tool['url']\
@@ -61,6 +93,20 @@ class Tool(Thread):
                 print(f"\020~Could not find {self.tool['name']}, downloading from {self.tool['url']}...")
         super().__init__(wind, skip=skip)
 
+    def _run_args(self, print):
+        rt = self.tool['run_type']
+        if rt == 'java_core':
+            return [os.path.join(self.pth, "bin", "java")]
+        if rt == 'java':
+            javtool = Tool(self._wind, "java")
+            if not javtool.success:
+                javtool.main(print)
+            if javtool.success:
+                return [os.path.join(javtool.pth, "bin", "java"), "-jar", self.pth]
+            else:
+                print("\020-Failed to install Java so cannot run command!")
+        return None
+
     @property
     def done(self):
         return self.success and super().done
@@ -73,7 +119,7 @@ class Tool(Thread):
             try:
                 resp.raise_for_status()
             except requests.exceptions.HTTPError as e:
-                print(f"\020-Failed loading {self.tool['url']}!\n  {e}")
+                print(f"\020-Failed loading {self.tool['url']}!\n\t{e}")
                 return
             release_response = json.loads(resp.content)
             assets_url = release_response["assets_url"]
@@ -81,7 +127,7 @@ class Tool(Thread):
             try:
                 resp2.raise_for_status()
             except requests.exceptions.HTTPError as e:
-                print(f"\020-Failed loading {assets_url}!\n  {e}")
+                print(f"\020-Failed loading {assets_url}!\n\t{e}")
                 return
             assets_response = json.loads(resp2.content)
             for asset in assets_response:

@@ -1,0 +1,11 @@
+{
+    "name": "Apk Signer",
+    "cmd": "apk-signer",
+    "fname": "apk-signer.jar",
+    "run_type": "java",
+    "url": "https://api.github.com/repos/patrickfav/uber-apk-signer/releases/latest",
+    "url_type": "Github",
+    "gh_params": {
+        "prefix": ".jar"
+    }
+}

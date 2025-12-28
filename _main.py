@@ -1,3 +1,14 @@
+import os
+def _getapk():
+    for i in os.listdir(os.getcwd()):
+        if i.endswith(".apk"):
+            return os.path.join(os.getcwd(), i)
+    return None
+
+APK_FILE = _getapk()
+if APK_FILE is not None:
+    OUT_FOLDER = APK_FILE[:APK_FILE.rindex(".")]
+
 if 'main' not in globals():
     from app import MainApp
     from gui.wind import ScrlWind

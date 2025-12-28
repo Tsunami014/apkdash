@@ -35,6 +35,7 @@ def fix(txt):
     txt = re.sub('^.*\n?.*\020<', '', txt, flags=re.MULTILINE).lstrip("\n")
     if txt == '':
         return ''
+    txt = txt.replace('\t', '    ')
     if txt[-1] == '\n':
         return txt.rstrip("\n")+"\n"
     return txt

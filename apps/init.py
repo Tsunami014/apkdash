@@ -1,16 +1,24 @@
 from gui.wind import ScrlWind
-from tools import Tool
+from tools import ToolRunner
+from _main import APK_FILE, OUT_FOLDER
+import os
 
 __apps__ = ['Init']
 
 class Init(ScrlWind):
     NAME = "Init"
     def _init(self):
-        self.title = "Initialise"
-        self.apktool = Tool(self, "apktool")
-        self.apktool.start()
+        if APK_FILE is None:
+            print("\020-No apk file found in current directory!")
+            return
+        if os.path.exists(OUT_FOLDER):
+            print("\020+Out folder already exists!")
+            return
+        self.title = "Initialising"
+        print("\020~Initialising", APK_FILE)
+        self.run = ToolRunner(self, "apktool", "d", APK_FILE)
         return True
     def _upd(self, k=None):
-        if self.apktool.done:
+        if self.run.done:
             print("\020+Finished!")
 

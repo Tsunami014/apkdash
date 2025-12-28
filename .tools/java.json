@@ -2,7 +2,7 @@
     "name": "Java",
     "cmd": "java",
     "fname": "java",
-    "run_type": "java",
+    "run_type": "java_core",
     "url": "https://api.adoptium.net/v3/binary/latest/{version}/ga/{os}/{arch}/jre/hotspot/normal/eclipse",
     "url_type": "java"
 }
