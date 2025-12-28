@@ -1,2 +1,4 @@
 *.pyc
 .tools/downloads/*
+test/*
+!test/sample-app.apk
