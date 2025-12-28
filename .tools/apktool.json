@@ -1,7 +1,8 @@
 {
-    "name": "ApkTool",
+    "name": "Apktool",
     "cmd": "apktool",
     "fname": "apktool.jar",
+    "run_type": "java",
     "url": "https://api.github.com/repos/iBotPeaches/Apktool/releases/latest",
     "url_type": "Github",
     "gh_params": {
