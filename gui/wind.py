@@ -38,6 +38,7 @@ class Window:
 
     NAME: str
     PRIO: int = 0
+    CHAR: str
 
     def __init__(self):
         self.buf = ""

@@ -5,7 +5,9 @@ import importlib
 import os
 
 class LogDispl(ScrlWind):
+    PRIO = -1
     NAME = "Main App Logs"
+    CHAR = "`"
     def _init(self):
         self.title = "Main App Logs (not for individual windows)"
         self._upd()
@@ -45,37 +47,18 @@ def loadApps(name):
 class MainApp:
     __slots__ = ['wind', 'apps', '_createWind']
     def __init__(self):
-        self.apps = {'`': LogDispl}
+        self.apps = {}
 
     def _initialise(self, crwind):
-        apps = []
+        apps = [LogDispl]
         for f in os.listdir(os.path.abspath(__file__+"/../apps/")):
             apps.extend(loadApps(f))
         apps.sort(key=lambda a: a.PRIO)
         for a in apps:
-            n = a.NAME
-            done = False
-            for c in n:
-                if c == ' ':
-                  continue
-                c = c.lower()
-                if c not in self.apps:
-                    self.apps[c] = a
-                    done = True
-                    break
-                c = c.upper()
-                if c not in self.apps:
-                    self.apps[c] = a
-                    done = True
-                    break
-            if not done:
-                for c in "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ":
-                    if c not in self.apps:
-                        self.apps[c] = a
-                        done = True
-                        break
-            if not done:
-                log.error("Too many apps, could not find any characters avaliable!")
+            if a.CHAR in self.apps:
+                log.error(f"Multiple apps with same character `{a.CHAR}`")
+            else:
+                self.apps[a.CHAR] = a
 
         self._createWind = crwind
         self.setWind(crwind)
