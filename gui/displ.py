@@ -24,6 +24,7 @@ cW colour White
 cG colour Grey
 cB colour Black (invisible)
 """
+from builtins import print # So later stuffing around won't mess up the core printing
 import shutil
 import re
 

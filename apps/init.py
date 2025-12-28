@@ -1,5 +1,5 @@
 from gui.wind import ScrlWind
-from downloader import GithubDownload
+from tools import Tool
 
 __apps__ = ['Init']
 
@@ -7,7 +7,7 @@ class Init(ScrlWind):
     NAME = "Init"
     def _init(self):
         self.title = "Initialise"
-        self.apktool = GithubDownload(self, "apktool", "apktool.jar", "https://api.github.com/repos/iBotPeaches/Apktool/releases/latest")
+        self.apktool = Tool(self, "apktool")
         self.apktool.start()
         return True
     def _upd(self, k=None):
