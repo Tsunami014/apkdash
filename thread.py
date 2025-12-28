@@ -4,13 +4,13 @@ from _main import main
 import builtins
 
 class Progress:
-    def __init__(self, t: 'Thread', max, initial=0):
-        self.print = t._print
+    def __init__(self, t: 'Thread', print, max, initial=0):
+        self.print = print
         self.wind = t._wind
         self.side = t.side
         self.max = max
         self.progress = 0
-        self.print(upd=False)
+        print(upd=False)
         self(initial)
 
     def __call__(self, increase=0):

@@ -17,7 +17,7 @@ class Init(ScrlWind):
         else:
             self.title = "Initialising"
             print("\020~Initialising", APK_FILE)
-            self.run = ToolRunner(self, "apktool", "d", APK_FILE)
+            self.run = ToolRunner(self, "apktool", "d", APK_FILE, runTxt="\020bDecompiling apk...\020r")
         return True
     def _upd(self, k=None):
         if self.run.done:

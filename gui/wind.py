@@ -77,11 +77,9 @@ class Window:
         if k == key.TAB or k == '\033[Z': # Shift+tab
             self.sel = 1 - self.sel
             return
-        if k == ',':
+        if k == ' ':
             self.delfn(ExitCodes.CREATE)
             return
-        if k == ' ':
-            self.delfn(ExitCodes.PICK)
         _oldprt = builtins.print
         builtins.print = self._bufprt
         self._cur = 1
