@@ -6,6 +6,6 @@
     "url": "https://api.github.com/repos/iBotPeaches/Apktool/releases/latest",
     "url_type": "Github",
     "gh_params": {
-        "prefix": ".jar"
+        "matches": ".+\\.jar"
     }
 }

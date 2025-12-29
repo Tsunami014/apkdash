@@ -6,15 +6,12 @@ import builtins
 import shutil
 import json
 import os
+import re
 import zipfile
 import tarfile
 
 _toolpth = os.path.abspath(__file__+"/../.tools")
 _dwnldpth = os.path.abspath(_toolpth+"/downloads")
-if not os.path.exists(_toolpth):
-    os.mkdir(_toolpth)
-if not os.path.exists(_dwnldpth):
-    os.mkdir(_dwnldpth)
 
 class Runner(Thread):
     def __init__(self, t: '_ToolBase', *args, runTxt=None):
@@ -56,6 +53,8 @@ class Tool:
     def __new__(cls, wind, name):
         if name == "java":
             return JavaTool(wind)
+        if name == "git":
+            return GitTool(wind)
         return RegularTool(wind, name)
 
 class _ToolBase(Thread):
@@ -91,6 +90,10 @@ class _ToolBase(Thread):
         return self.success and super().done
 
     def _download(self, print):
+        if not os.path.exists(_toolpth):
+            os.mkdir(_toolpth)
+        if not os.path.exists(_dwnldpth):
+            os.mkdir(_dwnldpth)
         if self.tool['url_type'] == "Github":
             print("\020~Downloading latest release from github...")
             params = self.tool['gh_params']
@@ -109,8 +112,9 @@ class _ToolBase(Thread):
                 print(f"\020-Failed loading {assets_url}!\n\t{e}")
                 return
             assets_response = json.loads(resp2.content)
+            reg = re.compile(params['matches'])
             for asset in assets_response:
-                if asset["name"].endswith(params['prefix']):
+                if reg.fullmatch(asset["name"]):
                     print(f"\020~Downloading asset {asset['name']}...")
                     url = asset['browser_download_url']
                     break
@@ -245,4 +249,30 @@ class JavaTool(_ToolBase):
         os.remove(tmppth)
         print("\020+Successfully downloaded and extracted Java!")
         self.success = True
+
+class GitTool(_ToolBase):
+    def __init__(self, wind):
+        if not self._setup_tool("git"):
+            return super().__init__(wind, skip=True)
+        found = self._find_tool()
+        s = platform.system()
+        if s == "Windows":
+            m = platform.machine().lower()
+            if m in ("i386", "i486", "i586", "i686", "x86"):
+                arch = "32-bit"
+            elif m in ("x86_64", "amd64"):
+                arch = "64-bit"
+            elif m in ("arm64", "aarch64"):
+                arch = "arm64" 
+            else:
+                print(f"\020-Unsupported architecture when installing git: {m}. Please install Git separately and ensure `git` is in the path.")
+                return super().__init__(wind, skip=True)
+            self.tool['gh_params']['matches'].replace("typ", arch)
+            return super().__init__(wind, skip=found)
+        if not found:
+            print("\020-Autodownload for git only works for Windows, and git was not found in path. Please download git separately.")
+        return super().__init__(wind, skip=True)
+
+    def _run_args(self, rn):
+        return [self.pth]
 
