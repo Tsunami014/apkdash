@@ -1,11 +1,11 @@
-from gui.wind import ScrlWind
+from gui.wind import AutoScrlWind
 from tools import ToolRunner
 from _main import APK_FILE, OUT_FOLDER
 import os
 
 __apps__ = ['Init']
 
-class Init(ScrlWind):
+class Init(AutoScrlWind):
     NAME = "Init"
     CHAR = "1"
     def _init(self):
@@ -21,7 +21,7 @@ class Init(ScrlWind):
         else:
             self.title = "Initialising"
             print("\020~Initialising", APK_FILE)
-            self.run = ToolRunner(self, "apktool", "d", APK_FILE, runTxt="\020bDecompiling apk...\020r")
+            self.run = ToolRunner(self, "apktool", "d", APK_FILE, runTxt="Decompiling apk...")
         return True
     def _upd(self, k=None):
         if self.done:

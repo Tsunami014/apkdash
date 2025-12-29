@@ -1,5 +1,4 @@
 from threading import Thread as _T, Lock as _L
-from gui.displ import getSizings
 from _main import main
 import builtins
 

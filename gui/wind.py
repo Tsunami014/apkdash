@@ -1,4 +1,4 @@
-from .displ import fix, strlen, strcut, toPrintable, fixVariable
+from .displ import fix, strlen, strcut, toPrintable, fixVariable, getSizings
 from enum import IntEnum
 from readchar import key
 import builtins
@@ -9,10 +9,21 @@ class Buffer:
         self.txt = fixVariable(txt, sect)
         self.scroll = scroll
 
-    def initialFix(self, wid: int):
+    def initialFix(self, wid: int, hei: int):
+        if self.scroll is None:
+            return
+        if self.scroll == -1:
+            self.scroll = max(Buffer(self.txt).howManyRows(wid) - hei, 0)
         while self.txt and self.scroll > 0:
             self.popBuf(wid)
             self.scroll -= 1
+
+    def howManyRows(self, wid: int):
+        i = 0
+        while self.txt:
+            self.popBuf(wid)
+            i += 1
+        return i
 
     def __bool__(self):
         return self.txt != ''
@@ -132,9 +143,18 @@ class ScrlWind(Window):
         self.buf = fix(self.buf)
         self.sidebuf = fix(self.sidebuf)
 
+    @property
+    def _scrl(self):
+        return (self.sideScrl, self.mainScrl)[self.sel]
+    @_scrl.setter
+    def _scrl(self, new):
+        if self.sel == 0:
+            self.sideScrl = new
+        else:
+            self.mainScrl = new
+
     def update(self, k):
-        old = (self.sideScrl, self.mainScrl)[self.sel]
-        if old is not None:
+        if self._scrl is not None:
             mod = None
             if k == key.UP:
                 mod = -1
@@ -145,11 +165,7 @@ class ScrlWind(Window):
             elif k == key.PAGE_DOWN:
                 mod = 5
             if mod is not None:
-                new = max(old + mod, 0)
-                if self.sel == 0:
-                    self.sideScrl = new
-                else:
-                    self.mainScrl = new
+                self._scrl = max(self._scrl + mod, 0)
                 return
         super().update(k)
 
@@ -165,4 +181,26 @@ class ScrlWind(Window):
     def sideBuffer(self):
         self.sidebuf = fix(self.sidebuf)
         return Buffer(self.sidebuf, 0, self.sideScrl or 0)
+
+class AutoScrlWind(ScrlWind):
+    def _bufprt(self, *args, **kwargs):
+        super()._bufprt(*args, **kwargs)
+        self.mainScrl = -1
+    def _sideprt(self, *args, **kwargs):
+        super()._bufprt(*args, **kwargs)
+        self.sideScrl = -1
+    def update(self, k):
+        if self._scrl == -1:
+            if k in (key.UP, key.DOWN, key.PAGE_UP, key.PAGE_DOWN):
+                if self.sel == 0:
+                    buf = self.sideBuffer
+                else:
+                    buf = self.mainBuffer
+                w, h, wid1, wid2, = getSizings()
+                if self.sel == 0:
+                    w = wid1
+                elif self.sidebuf:
+                    w = wid2
+                self._scrl = max(buf.howManyRows(w)-h, 0)
+        super().update(k)
 

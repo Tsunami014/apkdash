@@ -29,6 +29,7 @@ cB colour Black (invisible)
 """
 from builtins import print # So later stuffing around won't mess up the core printing
 import shutil
+import time
 import re
 
 def fix(txt):
@@ -92,10 +93,10 @@ def toPrintable(txt):
     safe = re.sub(_ansi, repl, safe).replace('\033', '�')
 
     return safe\
-        .replace('\020+', '[\033[32m+\033[39m] ')\
-        .replace('\020-', '[\033[34m-\033[39m] ')\
-        .replace('\020*', '[\033[33m*\033[39m] ')\
-        .replace('\020~', '[\033[35m~\033[39m] ')\
+        .replace('\020+', '[\033[32;1m+\033[0m] \033[1m')\
+        .replace('\020-', '[\033[34;1m-\033[0m] \033[1m')\
+        .replace('\020*', '[\033[33;1m*\033[0m] \033[1m')\
+        .replace('\020~', '[\033[35;1m~\033[0m] \033[1m')\
         .replace('\020b', '\033[1m')\
         .replace('\020i', '\033[7m')\
         .replace('\020r', '\033[39m')\
@@ -116,7 +117,6 @@ def fixVariable(txt, sect=None):
     w, _, w1, w2 = getSizings()
     if sect is not None:
         w = [w1, w2][sect]
-    w -= 2
 
     def handlePerc(match):
         try:
@@ -128,7 +128,7 @@ def fixVariable(txt, sect=None):
         t1, t2 = "Progress:", f" {perc}%"
         o = f"\020b{t1}\020r{t2}"
         if max > 0 and 0 <= progress < max:
-            wid = w -len(t1)-len(t2) - 3
+            wid = w -len(t1)-len(t2) - 5
             filled = round(progress / max * wid)
             line = "█"*filled + "░"*(wid-filled)
             o += "  "+line
@@ -158,20 +158,21 @@ def getSizings():
     wid1 = (size.columns-3)//3
     return size.columns-2, size.lines-2, wid1, (size.columns-3)-wid1
 
+lastPrtTime = 0
 def printScreen(app):
     wind = app.wind
     buf = wind.mainBuffer
     mxidx = 0
     w, h, wid1, wid2, = getSizings()
-    print("\033[0;0H", end="")
+    out = "\033[0;0H"
     if not wind.sidebuf:
-        buf.initialFix(w)
-        print("╭"+fixTitle(wind.titles[1], w)+"╮")
+        buf.initialFix(w, h)
+        out += "╭"+fixTitle(wind.titles[1], w)+"╮\n"
         for i in range(h):
             prt = buf.popBuf(w)
             if buf:
                 mxidx = i
-            print("│"+prt+"\033[0m│")
+            out += "│"+prt+"\033[0m│\n"
         c = "─"
         wind.sel = 1
         if wind.titles[1] != "":
@@ -180,15 +181,15 @@ def printScreen(app):
             curspos = 2
     else:
         sidebuf = wind.sideBuffer
-        sidebuf.initialFix(wid1)
-        buf.initialFix(wid2)
-        print("╭"+fixTitle(wind.titles[0], wid1)+"┬"+fixTitle(wind.titles[1], wid2)+"╮")
+        sidebuf.initialFix(wid1, h)
+        buf.initialFix(wid2, h)
+        out += "╭"+fixTitle(wind.titles[0], wid1)+"┬"+fixTitle(wind.titles[1], wid2)+"╮\n"
         for i in range(h):
             prt1 = sidebuf.popBuf(wid1)
             prt2 = buf.popBuf(wid2)
             if buf or sidebuf:
                 mxidx = i
-            print("│"+prt1+"\033[0m│"+prt2+"\033[0m│")
+            out += "│"+prt1+"\033[0m│"+prt2+"\033[0m│\n"
         c = "┴"
         if wind.sel == 0:
             if wind.titles[0] != "":
@@ -200,6 +201,9 @@ def printScreen(app):
                 curspos = wid1+4
             else:
                 curspos = wid1+3
-    print("╰"+fixTitle(app.endPref(), wid1)+c+fixTitle(app.endSuff(), wid2, True)+"╯", end=f"\033[0;{curspos}H", flush=True)
+    out += "╰"+fixTitle(app.endPref(), wid1)+c+fixTitle(app.endSuff(), wid2, True)+"╯"
+    print(out, end=f"\033[0;{curspos}H", flush=True)
+    global lastPrtTime
+    lastPrtTime = time.time()
     return mxidx
 
