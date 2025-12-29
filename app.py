@@ -59,9 +59,12 @@ def loadApps(name):
     return o
 
 class MainApp:
-    __slots__ = ['wind', 'apps', '_createWind']
+    __slots__ = ['wind', 'apps', 'recents', 'idx', 'opens', '_createWind']
     def __init__(self):
         self.apps = {}
+        self.recents = []
+        self.opens = {}
+        self.idx = 0
 
     def _initialise(self, crwind):
         apps = [LogDispl, ConfDispl]
@@ -75,19 +78,52 @@ class MainApp:
                 self.apps[a.CHAR] = a
 
         self._createWind = crwind
-        self.setWind(crwind)
+        self.wind = self.mkWind(crwind)
 
     def print(self):
         printScreen(self)
                     
 
     def _onWindDel(self, code):
-        if code == ExitCodes.CREATE:
-            typ = self._createWind
-        self.setWind(typ)
+        if code in (ExitCodes.CREATE, ExitCodes.CLOSE):
+            if code == ExitCodes.CLOSE:
+                self.opens.pop(list(self.opens.keys())[self.idx])
+                self.recents.pop(self.idx)
+            else:
+                self.idx += 1
+            self.wind = self.mkWind(self._createWind)
+        elif code == ExitCodes.FORWARDS:
+            if self.idx < len(self.recents)-1:
+                self.idx += 1
+                self.wind = self.recents[self.idx]
+        elif code == ExitCodes.BACK:
+            if self.idx > 0:
+                self.idx -= 1
+                self.wind = self.recents[self.idx]
+        else:
+            raise ValueError(
+                f"Unknown exit code: {code}!"
+            )
 
     def endPref(self):
-        return ""
+        if self.idx <= 0:
+            st = "─"
+            sidx = "─"
+        else:
+            st = "<"
+            if self.idx >= 10:
+                sidx = "+"
+            else:
+                sidx = str(self.idx)
+        if self.idx >= len(self.recents)-1:
+            nd = "─"
+            eidx = "─"
+        else:
+            nd = ">"
+            eidx = str(len(self.recents)-self.idx-1)
+            if len(eidx) > 1:
+                eidx = "+"
+        return sidx+st+nd+eidx
     def endSuff(self):
         pth = os.getcwd()
         home = os.path.expanduser("~")
@@ -95,7 +131,15 @@ class MainApp:
             return os.path.join("~", os.path.relpath(pth, home))
         return pth
 
-    def setWind(self, cls):
-        self.wind = cls()
-        self.wind.delfn = self._onWindDel
+    def setWind(self, wind, updIdx=True):
+        self.wind = wind
+        self.recents.append(wind)
+        self.opens[self.wind.CHAR] = self.wind
+        if updIdx:
+            self.idx += 1
+
+    def mkWind(self, cls):
+        wind = cls()
+        wind.delfn = self._onWindDel
+        return wind
 

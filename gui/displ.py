@@ -160,11 +160,17 @@ def getSizings():
 
 lastPrtTime = 0
 def printScreen(app):
+    w, h, wid1, wid2, = getSizings()
+    out = "\033[0;0H"
+    if w <= 10 or h <= 3:
+        out += "╭"+"─"*(w-2)+"╮\n"
+        out += ("│"+" "*(w-2)+"│\n")*(h-2)
+        out += "╰"+"─"*(w-2)+"╯"
+        print(out, end="\033[0;2H", flush=True)
+        return 0
     wind = app.wind
     buf = wind.mainBuffer
     mxidx = 0
-    w, h, wid1, wid2, = getSizings()
-    out = "\033[0;0H"
     if not wind.sidebuf:
         buf.initialFix(w, h)
         out += "╭"+fixTitle(wind.titles[1], w)+"╮\n"

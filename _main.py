@@ -5,7 +5,7 @@ def _getapk():
             pth = os.path.join(os.getcwd(), i)
             home = os.path.expanduser("~")
             if pth.startswith(home):
-                pth = "~"+pth[len(home):]
+                pth = os.path.join("~", os.path.relpath(pth, home))
             return pth
     return None
 
@@ -30,16 +30,28 @@ if 'main' not in globals():
                 if a.PRIO != lstpri:
                     print("\020=")
                     lstpri = a.PRIO
-                print(f"\020b{c}\020R: {a.NAME}")
+                nam = a.NAME
+                if c in main.opens.keys():
+                    nam = "\020b*"+nam
+                print(f"\020b{c}\020R: {nam}")
             return True
         def _upd(self, k=None):
             if k == '\x03' or k == key.ESC or k == key.ESC+key.ESC:
                 origPrt("\033[2J", end="", flush=True)
                 quit()
             if k in main.apps.keys():
-                main.setWind(main.apps[k])
+                if k in main.opens.keys():
+                    toopen = main.opens[k]
+                    idx = main.recents.index(toopen)
+                    main.opens.pop(list(main.opens.keys())[idx])
+                    main.recents.pop(idx)
+                    main.idx -= 1
+                    main.setWind(toopen, False)
+                else:
+                    main.setWind(main.mkWind(main.apps[k]), False)
                 return
-            super()._upd(k)
+            if k != ' ':
+                super()._upd(k)
 
     main._initialise(CreateWind)
 

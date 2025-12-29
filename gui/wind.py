@@ -39,10 +39,14 @@ class Buffer:
         return toPrintable(out) + " "*(wid-strlen(out))
 
 class ExitCodes(IntEnum):
-    EXCEPTION = 0
-    """An exception occurred"""
     CREATE = 1
     """Go to app creation screen"""
+    CLOSE = 2
+    """Close the running instance and go to app creation screen"""
+    BACK = 3
+    """Go to prev app in recent list"""
+    FORWARDS = 4
+    """Go to next app in recent list"""
 
 class Window:
     __slots__ = ['_cur', 'buf', 'sidebuf', 'sel', 'delfn', 'titles']
@@ -91,6 +95,14 @@ class Window:
         if k == ' ':
             self.delfn(ExitCodes.CREATE)
             return
+        if k == '\x03' or k == key.ESC or k == key.ESC+key.ESC:
+            self.delfn(ExitCodes.CLOSE)
+            return
+        if k == ',':
+            self.delfn(ExitCodes.BACK)
+            return
+        if k == '.':
+            self.delfn(ExitCodes.FORWARDS)
         _oldprt = builtins.print
         builtins.print = self._bufprt
         self._cur = 1
