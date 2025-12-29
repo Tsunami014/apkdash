@@ -2,12 +2,18 @@ import os
 def _getapk():
     for i in os.listdir(os.getcwd()):
         if i.endswith(".apk"):
-            return os.path.join(os.getcwd(), i)
+            pth = os.path.join(os.getcwd(), i)
+            home = os.path.expanduser("~")
+            if pth.startswith(home):
+                pth = "~"+pth[len(home):]
+            return pth
     return None
 
 APK_FILE = _getapk()
 if APK_FILE is not None:
     OUT_FOLDER = APK_FILE[:APK_FILE.rindex(".")]
+else:
+    OUT_FOLDER = None
 
 if 'main' not in globals():
     from app import MainApp

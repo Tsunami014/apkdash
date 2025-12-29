@@ -27,9 +27,12 @@ class ConfDispl(Window):
     def _init(self):
         import _main
         self.title = "Config"
-        print("Folder:", os.getcwd())
-        print("Apk file:", _main.APK_FILE)
-        print("Out folder:", _main.OUT_FOLDER)
+        print("- Folder:", os.getcwd())
+        if _main.APK_FILE is None:
+            print("- Could not find an avaliable apk file in this folder!")
+        else:
+            print("- Apk file:", _main.APK_FILE)
+            print("- Out folder:", _main.OUT_FOLDER)
 
 def loadApps(name):
     if name == '__pycache__':
