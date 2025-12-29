@@ -1,13 +1,13 @@
 from gui.wind import Window, ScrlWind, ExitCodes
 from gui.displ import printScreen
-import log
 import importlib
+import log
 import os
 
 class LogDispl(ScrlWind):
     PRIO = -1
     NAME = "Main App Logs"
-    CHAR = "`"
+    CHAR = "~"
     def _init(self):
         self.title = "Main App Logs (not for individual windows)"
         self._upd()
@@ -19,6 +19,17 @@ class LogDispl(ScrlWind):
         else:
             for lg in log.LOGS:
                 print(lg)
+
+class ConfDispl(Window):
+    PRIO = -1
+    NAME = "Config"
+    CHAR = "`"
+    def _init(self):
+        import _main
+        self.title = "Config"
+        print("Folder:", os.getcwd())
+        print("Apk file:", _main.APK_FILE)
+        print("Out folder:", _main.OUT_FOLDER)
 
 def loadApps(name):
     if name == '__pycache__':
@@ -50,7 +61,7 @@ class MainApp:
         self.apps = {}
 
     def _initialise(self, crwind):
-        apps = [LogDispl]
+        apps = [LogDispl, ConfDispl]
         for f in os.listdir(os.path.abspath(__file__+"/../apps/")):
             apps.extend(loadApps(f))
         apps.sort(key=lambda a: a.PRIO)

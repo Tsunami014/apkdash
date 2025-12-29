@@ -15,21 +15,7 @@ class Progress:
 
     def __call__(self, increase=0):
         self.progress += increase
-        perc = round(self.progress / self.max * 100, 3)
-        t1, t2 = "Progress:", f" {perc}%"
-        self.print(f"\020<\020b{t1}\020r{t2}", end="", upd=False)
-        if self.max > 0 and 0 <= self.progress < self.max:
-            _, __, wid1, wid2 = getSizings()
-            if self.wind.sidebuf == "":
-                wid = wid1 + wid2
-            else:
-                wid = [wid1, wid2][self.side]
-            wid -= len(t1)+len(t2) + 3
-            filled = round(self.progress / self.max * wid)
-            line = "█"*filled + "░"*(wid-filled)
-            self.print(f"  {line}")
-        else:
-            self.print()
+        self.print(f"\020<\020%{self.progress}/{self.max}%")
 
     def end(self):
         self.progress = self.max

@@ -9,6 +9,9 @@
 * warn
 ~ info
 
+= separator
+%<perc>/<max>% Display a percent with a progress bar
+
 b bold
 i invert
 r reset colour
@@ -107,6 +110,34 @@ def toPrintable(txt):
         .replace('\020cG', '\033[90m')\
         .replace('\020cB', '\033[30m')\
         .replace('\020', '�')
+
+_perc = re.compile(r'\020%(\d+)/(\d+)%')
+def fixVariable(txt, sect=None):
+    w, _, w1, w2 = getSizings()
+    if sect is not None:
+        w = [w1, w2][sect]
+    w -= 2
+
+    def handlePerc(match):
+        try:
+            progress = int(match.group(1))
+            max = int(match.group(2))
+        except ValueError:
+            return 'Unknown percent: '+match.group(0)[1:]
+        perc = round(progress / max * 100, 3)
+        t1, t2 = "Progress:", f" {perc}%"
+        o = f"\020b{t1}\020r{t2}"
+        if max > 0 and 0 <= progress < max:
+            wid = w -len(t1)-len(t2) - 3
+            filled = round(progress / max * wid)
+            line = "█"*filled + "░"*(wid-filled)
+            o += "  "+line
+        return o
+    txt = re.sub(_perc, handlePerc, txt)
+
+    return txt\
+        .replace('\020=', '═'*w)
+    
 
 def fixTitle(tit, wid, right=False):
     if tit == "":

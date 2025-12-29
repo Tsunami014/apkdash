@@ -12,7 +12,7 @@ class Init(ScrlWind):
         self.done = False
         self.git = None
         if APK_FILE is None:
-            print("\020-No apk file found in current directory!")
+            print("\020-No apk file found in current directory! (See `config` for info)")
             return
         if os.path.exists(OUT_FOLDER):
             print("\020+Out folder already exists!")

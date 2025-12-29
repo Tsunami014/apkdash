@@ -1,12 +1,12 @@
-from .displ import fix, strlen, strcut, toPrintable, printScreen
+from .displ import fix, strlen, strcut, toPrintable, fixVariable
 from enum import IntEnum
 from readchar import key
 import builtins
 
 class Buffer:
     __slots__ = ['txt', 'scroll']
-    def __init__(self, txt, scroll=0):
-        self.txt = txt
+    def __init__(self, txt, sect=None, scroll=0):
+        self.txt = fixVariable(txt, sect)
         self.scroll = scroll
 
     def initialFix(self, wid: int):
@@ -99,11 +99,12 @@ class Window:
     @property
     def mainBuffer(self):
         self.buf = fix(self.buf)
-        return Buffer(self.buf)
+        sect = 1 if self.sidebuf else None
+        return Buffer(self.buf, sect)
     @property
     def sideBuffer(self):
         self.sidebuf = fix(self.sidebuf)
-        return Buffer(self.sidebuf)
+        return Buffer(self.sidebuf, 0)
 
 class ScrlWind(Window):
     __slots__ = ['mainScrl', 'sideScrl']
@@ -158,9 +159,10 @@ class ScrlWind(Window):
     @property
     def mainBuffer(self):
         self.buf = fix(self.buf)
-        return Buffer(self.buf, self.mainScrl or 0)
+        sect = 1 if self.sidebuf else None
+        return Buffer(self.buf, sect, self.mainScrl or 0)
     @property
     def sideBuffer(self):
         self.sidebuf = fix(self.sidebuf)
-        return Buffer(self.sidebuf, self.sideScrl or 0)
+        return Buffer(self.sidebuf, 0, self.sideScrl or 0)
 

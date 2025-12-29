@@ -19,7 +19,11 @@ if 'main' not in globals():
     class CreateWind(ScrlWind):
         def _init(self):
             self.title = "New window"
+            lstpri = -1
             for c, a in main.apps.items():
+                if a.PRIO != lstpri:
+                    print("\020=")
+                    lstpri = a.PRIO
                 print(f"\020b{c}\020R: {a.NAME}")
             return True
         def _upd(self, k=None):
