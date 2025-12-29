@@ -9,6 +9,7 @@ class Init(AutoScrlWind):
     NAME = "Init"
     CHAR = "1"
     def _init(self):
+        self.title = "Run the initial programs"
         self.done = False
         self.git = None
         if APK_FILE is None:

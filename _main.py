@@ -35,7 +35,7 @@ if 'main' not in globals():
                     nam = "\020b*"+nam
                 print(f"\020b{c}\020R: {nam}")
             return True
-        def _upd(self, k=None):
+        def update(self, k):
             if k == '\x03' or k == key.ESC or k == key.ESC+key.ESC:
                 origPrt("\033[2J", end="", flush=True)
                 quit()
@@ -45,13 +45,16 @@ if 'main' not in globals():
                     idx = main.recents.index(toopen)
                     main.opens.pop(list(main.opens.keys())[idx])
                     main.recents.pop(idx)
-                    main.idx -= 1
-                    main.setWind(toopen, False)
+                    main.setWind(toopen, int(main.idx < len(main.recents)-1))
                 else:
-                    main.setWind(main.mkWind(main.apps[k]), False)
+                    main.setWind(main.mkWind(main.apps[k]))
                 return
-            if k != ' ':
-                super()._upd(k)
+            if k == ' ':
+                if main.idx > 0:
+                    main.idx -= 0.5
+                    main.wind = main.recents[int(main.idx)]
+                return
+            super().update(k)
 
     main._initialise(CreateWind)
 

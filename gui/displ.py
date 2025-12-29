@@ -162,7 +162,7 @@ lastPrtTime = 0
 def printScreen(app):
     w, h, wid1, wid2, = getSizings()
     out = "\033[0;0H"
-    if w <= 10 or h <= 3:
+    if w <= 15 or h <= 3:
         out += "╭"+"─"*(w-2)+"╮\n"
         out += ("│"+" "*(w-2)+"│\n")*(h-2)
         out += "╰"+"─"*(w-2)+"╯"

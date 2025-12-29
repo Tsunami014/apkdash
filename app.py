@@ -1,5 +1,7 @@
 from gui.wind import Window, ScrlWind, ExitCodes
 from gui.displ import printScreen
+from collections import OrderedDict
+from math import floor
 import importlib
 import log
 import os
@@ -63,8 +65,8 @@ class MainApp:
     def __init__(self):
         self.apps = {}
         self.recents = []
-        self.opens = {}
-        self.idx = 0
+        self.opens = OrderedDict()
+        self.idx = -0.5
 
     def _initialise(self, crwind):
         apps = [LogDispl, ConfDispl]
@@ -90,15 +92,18 @@ class MainApp:
                 self.opens.pop(list(self.opens.keys())[self.idx])
                 self.recents.pop(self.idx)
             else:
-                self.idx += 1
+                self.idx = int(self.idx) + 0.5
             self.wind = self.mkWind(self._createWind)
         elif code == ExitCodes.FORWARDS:
             if self.idx < len(self.recents)-1:
-                self.idx += 1
+                self.idx = int(self.idx) + 1
                 self.wind = self.recents[self.idx]
         elif code == ExitCodes.BACK:
             if self.idx > 0:
-                self.idx -= 1
+                if int(self.idx) != self.idx:
+                    self.idx = int(self.idx)
+                else:
+                    self.idx = int(self.idx) - 1
                 self.wind = self.recents[self.idx]
         else:
             raise ValueError(
@@ -114,13 +119,16 @@ class MainApp:
             if self.idx >= 10:
                 sidx = "+"
             else:
-                sidx = str(self.idx)
+                idx = self.idx
+                if int(idx) != idx: # Homemade ceil
+                    idx = int(idx)+1
+                sidx = str(int(idx))
         if self.idx >= len(self.recents)-1:
             nd = "─"
             eidx = "─"
         else:
             nd = ">"
-            eidx = str(len(self.recents)-self.idx-1)
+            eidx = str(len(self.recents)-int(self.idx)-1)
             if len(eidx) > 1:
                 eidx = "+"
         return sidx+st+nd+eidx
@@ -131,12 +139,13 @@ class MainApp:
             return os.path.join("~", os.path.relpath(pth, home))
         return pth
 
-    def setWind(self, wind, updIdx=True):
+    def setWind(self, wind, inc=1):
         self.wind = wind
-        self.recents.append(wind)
-        self.opens[self.wind.CHAR] = self.wind
-        if updIdx:
-            self.idx += 1
+        self.idx = floor(self.idx) + inc
+        self.recents.insert(self.idx, wind)
+        items = list(self.opens.items())
+        items.insert(self.idx, (self.wind.CHAR, self.wind))
+        self.opens = OrderedDict(items)
 
     def mkWind(self, cls):
         wind = cls()
