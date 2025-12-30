@@ -15,20 +15,20 @@ class Buffer:
         if self.scroll == -1:
             self.scroll = max(Buffer(self.txt).howManyRows(wid) - hei, 0)
         while self.txt and self.scroll > 0:
-            self.popBuf(wid)
+            self.popBuf(wid, False)
             self.scroll -= 1
 
     def howManyRows(self, wid: int):
         i = 0
         while self.txt:
-            self.popBuf(wid)
+            self.popBuf(wid, False)
             i += 1
         return i
 
     def __bool__(self):
         return self.txt != ''
 
-    def popBuf(self, wid: int):
+    def popBuf(self, wid: int, ret=True):
         idx = self.txt.find("\n")
         ridx = strlen(self.txt[:idx])
         if idx == -1 or wid < ridx:
@@ -36,6 +36,8 @@ class Buffer:
         else:
             out = self.txt[:idx]
             self.txt = self.txt[idx+1:]
+        if not ret:
+            return
         return toPrintable(out) + " "*(wid-strlen(out))
 
 class ExitCodes(IntEnum):
@@ -71,8 +73,8 @@ class Window:
     def _initialise(self):
         self._run(1, self._init)
         self._run(0, self._initSide)
-        self.buf = fix(self.buf)
-        self.sidebuf = fix(self.sidebuf)
+        self._run(1, self._upd)
+        self._run(0, self._updSide)
 
     def _bufprt(self, *args, sep=" ", end="\n"):
         self.buf += sep.join(str(i) for i in args)+end
@@ -90,20 +92,22 @@ class Window:
         return self.sel == self._cur
 
     def update(self, k):
-        if k == key.TAB or k == '\033[Z': # Shift+tab
+        if k is None:
+            pass
+        elif k == key.TAB or k == '\033[Z': # Shift+tab
             self.sel = 1 - self.sel
-            return
-        if k == ' ':
+        elif k == ' ':
             self.delfn(ExitCodes.CREATE)
             return
-        if k == '\x03' or k == key.ESC or k == key.ESC+key.ESC:
+        elif k == '\x03' or k == key.ESC or k == key.ESC+key.ESC:
             self.delfn(ExitCodes.CLOSE)
             return
-        if k == ',':
+        elif k == ',':
             self.delfn(ExitCodes.BACK)
             return
-        if k == '.':
+        elif k == '.':
             self.delfn(ExitCodes.FORWARDS)
+            return
         self._run(1, self._upd, k if self.sel == 1 else None)
         self._run(0, self._updSide, k if self.sel == 0 else None)
 
@@ -132,6 +136,8 @@ class ScrlWind(Window):
             self.sideScrl = 0
         else:
             self.sideScrl = None
+        self._run(1, self._upd)
+        self._run(0, self._updSide)
 
     @property
     def _scrl(self):
@@ -160,7 +166,7 @@ class ScrlWind(Window):
                 if scrl > 0:
                     scrl = min(scrl, self.getMaxScrl())
                 self._scrl = scrl
-                return
+                k = None
         super().update(k)
 
     def _init(self): return False
@@ -177,10 +183,7 @@ class ScrlWind(Window):
         return Buffer(self.sidebuf, 0, self.sideScrl or 0)
     
     def getMaxScrl(self):
-        if self.sel == 0:
-            buf = self.sideBuffer
-        else:
-            buf = self.mainBuffer
+        buf = (self.sideBuffer, self.mainBuffer)[self.sel]
         w, h, wid1, wid2, = getSizings()
         if self.sel == 0:
             w = wid1
@@ -197,7 +200,9 @@ class AutoScrlWind(ScrlWind):
         self.sideScrl = -1
     def update(self, k):
         if self._scrl == -1:
-            if k in (key.UP, key.DOWN, key.PAGE_UP, key.PAGE_DOWN):
+            if k in (key.DOWN, key.PAGE_DOWN):
+                return
+            if k in (key.UP, key.PAGE_UP):
                 self._scrl = self.getMaxScrl()
         super().update(k)
 

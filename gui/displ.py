@@ -60,21 +60,13 @@ def strcut(txt, wid):
         return '', ''
     out = ''
     i = 0
-    lastln = 0
-    lastout = ''
     while i < len(txt):
-        ln = strlen(out)
-        if ln == wid:
-            lastout = out
-            break
-        if ln > wid:
-            break
-        if ln != lastln:
-            lastln = ln
-            lastout = out
         out += txt[i]
+        if strlen(out) > wid:
+            out = out[:-1]
+            break
         i += 1
-    return lastout, txt[len(lastout):]
+    return out, txt[len(out):]
 
 _inner = re.compile(r'[\[;](0|39|49|[0-9]|2[1-9]|(?:3|4|9|10)[0-7]|[34]8;(?:5;[0-9]+|2;(?:[0-9]+;){3}))[;m]')
 _ansi = re.compile(r'\033(\[[0-9;]*.)')
@@ -141,8 +133,8 @@ def fixVariable(txt, sect=None):
         txt1, txt2 = match.group(1), match.group(2)
         tlen = strlen(txt1)
         mxwid = max(w-tlen, 0)
-        if mxwid == 0:
-            return txt1
+        if mxwid <= 3:
+            return txt1+"."*mxwid
         if strlen(txt2) > mxwid:
             return txt1+strcut(txt2, mxwid-3)[0]+"..."
         return txt1+txt2
@@ -170,6 +162,9 @@ def getSizings():
     size = shutil.get_terminal_size()
     wid1 = (size.columns-3)//3
     return size.columns-2, size.lines-2, wid1, (size.columns-3)-wid1
+def getSze():
+    size = shutil.get_terminal_size()
+    return size.columns-2, size.lines-2
 
 lastPrtTime = 0
 def printScreen(app):

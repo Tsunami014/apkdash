@@ -75,7 +75,7 @@ class ValueEditor(SelectWind):
                         typtxt = ""
                     else:
                         typtxt = f" ({rs['id']})"
-                    print(f"- \020b{nam}\020R{typtxt} \020...{rs['text']}")
+                    print(f"- \020b{nam}\020R{typtxt}\020... {rs['text']}")
                 if self.vs.unuseds:
                     print("\n\020=\n")
             if self.vs.unuseds:
@@ -86,4 +86,11 @@ class ValueEditor(SelectWind):
                         xtra = f" ({id})"
                     print(f"- \020b{nam}\020R{xtra}")
             self.printed = True
+    def _initSide(self):
+        return True
+    def _updSide(self, k=None):
+        ln = self.getCurLine(1)
+        print("\020!!")
+        if len(ln) > 0 and ln[0] == '-':
+            print(ln)
 
