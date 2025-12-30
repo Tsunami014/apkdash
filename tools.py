@@ -14,10 +14,11 @@ _toolpth = os.path.abspath(__file__+"/../.tools")
 _dwnldpth = os.path.abspath(_toolpth+"/downloads")
 
 class Runner(Thread):
-    def __init__(self, t: '_ToolBase', *args, runTxt=None):
+    def __init__(self, t: '_ToolBase', *args, runTxt=None, quiet=False):
         self.tool = t
         self.ret = None
         self.runTxt = runTxt
+        self.quiet = quiet
         super().__init__(t._wind, *args)
         self.start()
     def main(self, print, *cmd):
@@ -29,16 +30,27 @@ class Runner(Thread):
             return
         if self.runTxt is not None:
             print("\020~"+self.runTxt)
-        process = subprocess.Popen(
-            main+list(cmd),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1  # Line-buffered
-        )
+        if self.quiet:
+            process = subprocess.Popen(
+                main+list(cmd),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+                text=True,
+                bufsize=1
+            )
+            itr = process.stderr
+        else:
+            process = subprocess.Popen(
+                main+list(cmd),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1  # Line-buffered
+            )
+            itr = process.stdout
 
         # Read line by line
-        for line in process.stdout:
+        for line in itr:
             print(line, end="")
 
         process.wait()
@@ -46,8 +58,8 @@ class Runner(Thread):
         self.ret = process.returncode
 
 class ToolRunner(Runner):
-    def __init__(self, wind, name, *args, runTxt=None):
-        super().__init__(Tool(wind, name), *args, runTxt=runTxt)
+    def __init__(self, wind, name, *args, runTxt=None, quiet=False):
+        super().__init__(Tool(wind, name), *args, runTxt=runTxt, quiet=quiet)
 
 class Tool:
     def __new__(cls, wind, name):

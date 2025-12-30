@@ -38,7 +38,7 @@ class Init(Procedure):
         self.title = "Initialising repo..."
         print("\020~Initialising repo...")
         self.skip() # Skip checking, because there is definately none
-        return tools.Runner(self.git, "init").waiter()
+        return tools.Runner(self.git, "init", "--initial-branch=main").waiter()
     @step(4)
     def sCheckCommits1(self):
         self.title = "Checking commits..."
@@ -56,7 +56,7 @@ class Init(Procedure):
             print("\020~Adding initial commit...")
         self.title = "Adding initial commit..."
         return tools.Runner(self.git, "add", "-A").waiter(
-            lambda: tools.Runner(self.git, "commit", "-m", "Initial commit").waiter()
+            lambda: tools.Runner(self.git, "commit", "-m", "Initial commit", quiet=True).waiter()
         )
     @step(999)
     def sFin(self):
