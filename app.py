@@ -61,7 +61,6 @@ def loadApps(name):
     return o
 
 class MainApp:
-    __slots__ = ['wind', 'apps', 'recents', 'idx', 'opens', '_createWind']
     def __init__(self):
         self.apps = {}
         self.recents = []
@@ -80,7 +79,7 @@ class MainApp:
                 self.apps[a.CHAR] = a
 
         self._createWind = crwind
-        self.wind = self.mkWind(crwind)
+        self.mkCreateWind()
 
     def print(self):
         printScreen(self)
@@ -89,15 +88,23 @@ class MainApp:
     def _onWindDel(self, code):
         if code in (ExitCodes.CREATE, ExitCodes.CLOSE):
             if code == ExitCodes.CLOSE:
-                self.opens.pop(list(self.opens.keys())[self.idx])
-                self.recents.pop(self.idx)
+                self.opens.pop(list(self.opens.keys())[int(self.idx)])
+                self.recents.pop(int(self.idx))
+                if len(self.recents) == 0:
+                    self.idx = -0.5
+                else:
+                    self.idx -= 0.5
             else:
                 self.idx = int(self.idx) + 0.5
-            self.wind = self.mkWind(self._createWind)
+            self.mkCreateWind()
         elif code == ExitCodes.FORWARDS:
-            if self.idx < len(self.recents)-1:
-                self.idx = int(self.idx) + 1
+            mx = len(self.recents)-1
+            if self.idx < mx:
+                self.idx = floor(self.idx) + 1
                 self.wind = self.recents[self.idx]
+            elif self.idx == mx:
+                self.idx = mx+0.5
+                self.mkCreateWind()
         elif code == ExitCodes.BACK:
             if self.idx > 0:
                 if int(self.idx) != self.idx:
@@ -105,12 +112,17 @@ class MainApp:
                 else:
                     self.idx = int(self.idx) - 1
                 self.wind = self.recents[self.idx]
+            elif self.idx == 0:
+                self.idx = -0.5
+                self.mkCreateWind()
         else:
             raise ValueError(
                 f"Unknown exit code: {code}!"
             )
 
     def endPref(self):
+        if len(self.recents) == 0:
+            return "    "
         if self.idx <= 0:
             st = "─"
             sidx = "─"
@@ -128,7 +140,7 @@ class MainApp:
             eidx = "─"
         else:
             nd = ">"
-            eidx = str(len(self.recents)-int(self.idx)-1)
+            eidx = str(len(self.recents)-floor(self.idx)-1)
             if len(eidx) > 1:
                 eidx = "+"
         return sidx+st+nd+eidx
@@ -147,8 +159,11 @@ class MainApp:
         items.insert(self.idx, (self.wind.CHAR, self.wind))
         self.opens = OrderedDict(items)
 
+    def mkCreateWind(self):
+        self.wind = self.mkWind(self._createWind)
+        self.wind._initialise()
+
     def mkWind(self, cls):
-        wind = cls()
-        wind.delfn = self._onWindDel
+        wind = cls(self._onWindDel)
         return wind
 

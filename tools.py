@@ -55,6 +55,8 @@ class Tool:
             return JavaTool(wind)
         if name == "git":
             return GitTool(wind)
+        if name == "lazygit":
+            return LazygitTool(wind)
         return RegularTool(wind, name)
 
 class _ToolBase(Thread):
@@ -183,6 +185,8 @@ class RegularTool(_ToolBase):
                 return [os.path.join(javtool.pth, "bin", "java"), "-jar", self.pth]
             else:
                 rn._printLock("\020-Failed to install Java so cannot run command!")
+        elif rt == 'exe':
+            return [self.pth]
         return None
 
     def main(self, print):
@@ -191,6 +195,31 @@ class RegularTool(_ToolBase):
         print(f"\020+Successfully downloaded {self.tool['name']}!")
         self.success = True
 
+
+def tryExtract(tmppth, pth, name):
+    tmp_dir = tmppth+".extract"
+    if os.path.exists(tmp_dir):
+        shutil.rmtree(tmp_dir)
+    try:
+        with zipfile.ZipFile(tmppth) as z:
+            z.extractall(tmp_dir)
+    except zipfile.BadZipFile:
+        try:
+            with tarfile.open(tmppth, "r:*") as t:
+                t.extractall(tmp_dir)
+        except tarfile.ReadError:
+            print("\020-Could not discern archive format!")
+            return False
+
+    entries = os.listdir(tmp_dir)
+    if len(entries) != 1: # There is more than 1 thing in the top level, all should be ok
+        shutil.move(tmp_dir, pth)
+    else: # The folder was wrapped in another folder
+        shutil.move(os.path.join(tmp_dir, entries[0]), pth)
+        shutil.rmtree(tmp_dir)
+    os.remove(tmppth)
+    print(f"\020+Successfully downloaded and extracted {name}!")
+    return True
 
 class JavaTool(_ToolBase):
     def __init__(self, wind):
@@ -225,30 +254,7 @@ class JavaTool(_ToolBase):
 
     def main(self, print):
         tmppth = self._download(print)
-
-        tmp_dir = tmppth+".extract"
-        if os.path.exists(tmp_dir):
-            shutil.rmtree(tmp_dir)
-        try:
-            with zipfile.ZipFile(tmppth) as z:
-                z.extractall(tmp_dir)
-        except zipfile.BadZipFile:
-            try:
-                with tarfile.open(tmppth, "r:*") as t:
-                    t.extractall(tmp_dir)
-            except tarfile.ReadError:
-                print("\020-Could not discern archive format!")
-                return
-
-        entries = os.listdir(tmp_dir)
-        if len(entries) != 1: # There is more than 1 thing in the top level, all should be ok
-            shutil.move(tmp_dir, self.pth)
-        else: # The folder was wrapped in another folder
-            shutil.move(os.path.join(tmp_dir, entries[0]), self.pth)
-            shutil.rmtree(tmp_dir)
-        os.remove(tmppth)
-        print("\020+Successfully downloaded and extracted Java!")
-        self.success = True
+        self.success = tryExtract(tmppth, self.pth, "Java")
 
 class GitTool(_ToolBase):
     def __init__(self, wind):
@@ -267,7 +273,7 @@ class GitTool(_ToolBase):
             else:
                 print(f"\020-Unsupported architecture when installing git: {m}. Please install Git separately and ensure `git` is in the path.")
                 return super().__init__(wind, skip=True)
-            self.tool['gh_params']['matches'].replace("typ", arch)
+            self.tool['gh_params']['matches'] = self.tool['gh_params']['matches'].replace("{arch}", arch)
             return super().__init__(wind, skip=found)
         if not found:
             print("\020-Autodownload for git only works for Windows, and git was not found in path. Please download git separately.")
@@ -275,4 +281,36 @@ class GitTool(_ToolBase):
 
     def _run_args(self, rn):
         return [self.pth]
+
+class LazygitTool(_ToolBase):
+    def __init__(self, wind):
+        if not self._setup_tool("lazygit"):
+            return super().__init__(wind, skip=True)
+        found = self._find_tool()
+        s = platform.system().lower()
+        if s not in ("linux", "windows", "darwin", "freebsd"):
+            print(f"\020-Unsupported OS when installing lazygit: {s}. Please install Lazygit separately and ensure `lazygit` is in the path.")
+            return super().__init__(wind, skip=True)
+        m = platform.machine().lower()
+        if m in ("x86_64", "amd64"):
+            arch = "x86_64"
+        elif m in ("arm64", "aarch64"):
+            arch = "arm64"
+        elif m.startswith("armv6"):
+            arch = "armv6"
+        elif m in ("i386", "i686"):
+            arch = "32-bit"
+        else:
+            print(f"\020-Unsupported architecture when installing lazygit: {m}. Please install Lazygit separately and ensure `lazygit` is in the path.")
+            return super().__init__(wind, skip=True)
+        self.tool['gh_params']['matches'] = self.tool['gh_params']['matches']\
+                .replace("{os}", s).replace("{arch}", arch)
+        return super().__init__(wind, skip=found)
+
+    def _run_args(self, rn):
+        return [self.pth]
+
+    def main(self, print):
+        tmppth = self._download(print)
+        self.success = tryExtract(tmppth, self.pth, "Lazygit")
 

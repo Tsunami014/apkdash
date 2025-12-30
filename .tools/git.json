@@ -2,10 +2,10 @@
     "name": "Git",
     "cmd": "git",
     "fname": "git.exe",
-    "run_type": "java",
+    "run_type": "exe",
     "url": "https://api.github.com/repos/git-for-windows/git/releases/latest",
     "url_type": "Github",
     "gh_params": {
-        "matches": "MinGit-[0-9.]+-{typ}.zip"
+        "matches": "MinGit-[0-9.]+-{arch}.zip"
     }
 }

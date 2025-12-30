@@ -48,11 +48,17 @@ if 'main' not in globals():
                     main.setWind(toopen, int(main.idx < len(main.recents)-1))
                 else:
                     main.setWind(main.mkWind(main.apps[k]))
+                    main.wind._initialise()
                 return
             if k == ' ':
                 if main.idx > 0:
                     main.idx -= 0.5
                     main.wind = main.recents[int(main.idx)]
+                elif main.idx == 0:
+                    main.wind = main.recents[int(main.idx)]
+                elif len(main.recents) > 0:
+                    main.wind = main.recents[0]
+                    main.idx = 0
                 return
             super().update(k)
 

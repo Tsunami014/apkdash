@@ -55,13 +55,14 @@ class Window:
     PRIO: int = 0
     CHAR: str
 
-    def __init__(self):
+    def __init__(self, delfn = lambda code: None):
         self.buf = ""
         self.sidebuf = ""
         self.titles = ["", ""]
         self.sel = 0
-        self.delfn = lambda code: None
+        self.delfn = delfn
 
+    def _initialise(self):
         _oldprt = builtins.print
         builtins.print = self._bufprt
         self._cur = 1
@@ -132,12 +133,7 @@ class Window:
 class ScrlWind(Window):
     __slots__ = ['mainScrl', 'sideScrl']
 
-    def __init__(self):
-        self.buf = ""
-        self.sidebuf = ""
-        self.titles = ["", ""]
-        self.sel = 0
-
+    def _initialise(self):
         _oldprt = builtins.print
         builtins.print = self._bufprt
         self._cur = 1

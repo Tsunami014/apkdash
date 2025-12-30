@@ -1,0 +1,11 @@
+{
+    "name": "Lazygit",
+    "cmd": "lazygit",
+    "fname": "apktool.jar",
+    "run_type": "exe",
+    "url": "https://api.github.com/repos/jesseduffield/lazygit/releases/latest",
+    "url_type": "Github",
+    "gh_params": {
+        "matches": ".+{os}_{arch}\\..+"
+    }
+}
