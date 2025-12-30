@@ -8,6 +8,7 @@ __apps__ = ['LzyGit']
 class LzyGit(AutoScrlWind):
     NAME = "Lazygit"
     CHAR = "g"
+    PRIO = 0
     def _init(self):
         self.title = "Lazygit"
         self.lzgit = LazygitTool(self)

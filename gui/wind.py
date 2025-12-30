@@ -50,7 +50,7 @@ class ExitCodes(IntEnum):
 
 class Window:
     NAME: str
-    PRIO: int = 0
+    PRIO: int
     CHAR: str
 
     def __init__(self, delfn = lambda code: None):
@@ -144,7 +144,8 @@ class ScrlWind(Window):
             self.mainScrl = new
 
     def update(self, k):
-        if self._scrl is not None:
+        scrl = self._scrl
+        if scrl is not None:
             mod = None
             if k == key.UP:
                 mod = -1
@@ -155,7 +156,10 @@ class ScrlWind(Window):
             elif k == key.PAGE_DOWN:
                 mod = 5
             if mod is not None:
-                self._scrl = max(self._scrl + mod, 0)
+                scrl = max(scrl + mod, 0)
+                if scrl > 0:
+                    scrl = min(scrl, self.getMaxScrl())
+                self._scrl = scrl
                 return
         super().update(k)
 
@@ -171,6 +175,18 @@ class ScrlWind(Window):
     def sideBuffer(self):
         self.sidebuf = fix(self.sidebuf)
         return Buffer(self.sidebuf, 0, self.sideScrl or 0)
+    
+    def getMaxScrl(self):
+        if self.sel == 0:
+            buf = self.sideBuffer
+        else:
+            buf = self.mainBuffer
+        w, h, wid1, wid2, = getSizings()
+        if self.sel == 0:
+            w = wid1
+        elif self.sidebuf:
+            w = wid2
+        return max(buf.howManyRows(w)-h, 0)
 
 class AutoScrlWind(ScrlWind):
     def _bufprt(self, *args, **kwargs):
@@ -182,15 +198,6 @@ class AutoScrlWind(ScrlWind):
     def update(self, k):
         if self._scrl == -1:
             if k in (key.UP, key.DOWN, key.PAGE_UP, key.PAGE_DOWN):
-                if self.sel == 0:
-                    buf = self.sideBuffer
-                else:
-                    buf = self.mainBuffer
-                w, h, wid1, wid2, = getSizings()
-                if self.sel == 0:
-                    w = wid1
-                elif self.sidebuf:
-                    w = wid2
-                self._scrl = max(buf.howManyRows(w)-h, 0)
+                self._scrl = self.getMaxScrl()
         super().update(k)
 

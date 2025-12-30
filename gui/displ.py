@@ -11,6 +11,7 @@
 
 = separator
 %<perc>/<max>% Display a percent with a progress bar
+...<txt> Display as much of the text as fits on that line
 
 b bold
 i invert
@@ -113,6 +114,7 @@ def toPrintable(txt):
         .replace('\020', '�')
 
 _perc = re.compile(r'\020%(\d+)/(\d+)%')
+_dots = re.compile(r'(.*)\020\.\.\.(.*)')
 def fixVariable(txt, sect=None):
     w, _, w1, w2 = getSizings()
     if sect is not None:
@@ -135,9 +137,20 @@ def fixVariable(txt, sect=None):
         return o
     txt = re.sub(_perc, handlePerc, txt)
 
+    def handleDots(match):
+        txt1, txt2 = match.group(1), match.group(2)
+        tlen = strlen(txt1)
+        mxwid = max(w-tlen, 0)
+        if mxwid == 0:
+            return txt1
+        if strlen(txt2) > mxwid:
+            return txt1+strcut(txt2, mxwid-3)[0]+"..."
+        return txt1+txt2
+    txt = re.sub(_dots, handleDots, txt)
+
     return txt\
         .replace('\020=', '═'*w)
-    
+
 
 def fixTitle(tit, wid, right=False):
     if tit == "":
@@ -163,9 +176,9 @@ def printScreen(app):
     w, h, wid1, wid2, = getSizings()
     out = "\033[0;0H"
     if w <= 15 or h <= 3:
-        out += "╭"+"─"*(w-2)+"╮\n"
-        out += ("│"+" "*(w-2)+"│\n")*(h-2)
-        out += "╰"+"─"*(w-2)+"╯"
+        out += "╭"+"─"*w+"╮\n"
+        out += ("│"+" "*w+"│\n")*h
+        out += "╰"+"─"*w+"╯"
         print(out, end="\033[0;2H", flush=True)
         return 0
     wind = app.wind
