@@ -49,8 +49,6 @@ class ExitCodes(IntEnum):
     """Go to next app in recent list"""
 
 class Window:
-    __slots__ = ['_cur', 'buf', 'sidebuf', 'sel', 'delfn', 'titles']
-
     NAME: str
     PRIO: int = 0
     CHAR: str
@@ -62,15 +60,17 @@ class Window:
         self.sel = 0
         self.delfn = delfn
 
-    def _initialise(self):
+    def _run(self, cur, fn, *args):
         _oldprt = builtins.print
-        builtins.print = self._bufprt
-        self._cur = 1
-        self._init()
-        builtins.print = self._sideprt
-        self._cur = 0
-        self._initSide()
+        builtins.print = (self._sideprt, self._bufprt)[cur]
+        self._cur = cur
+        ret = fn(*args)
         builtins.print = _oldprt
+        return ret
+
+    def _initialise(self):
+        self._run(1, self._init)
+        self._run(0, self._initSide)
         self.buf = fix(self.buf)
         self.sidebuf = fix(self.sidebuf)
 
@@ -104,16 +104,8 @@ class Window:
             return
         if k == '.':
             self.delfn(ExitCodes.FORWARDS)
-        _oldprt = builtins.print
-        builtins.print = self._bufprt
-        self._cur = 1
-        self._upd(k if self.sel == 1 else None)
-        builtins.print = self._sideprt
-        self._cur = 0
-        self._updSide(k if self.sel == 0 else None)
-        builtins.print = _oldprt
-        self.buf = fix(self.buf)
-        self.sidebuf = fix(self.sidebuf)
+        self._run(1, self._upd, k if self.sel == 1 else None)
+        self._run(0, self._updSide, k if self.sel == 0 else None)
 
     def _init(self): pass
     def _upd(self, k=None): pass
@@ -131,25 +123,15 @@ class Window:
         return Buffer(self.sidebuf, 0)
 
 class ScrlWind(Window):
-    __slots__ = ['mainScrl', 'sideScrl']
-
     def _initialise(self):
-        _oldprt = builtins.print
-        builtins.print = self._bufprt
-        self._cur = 1
-        if self._init():
+        if self._run(1, self._init):
             self.mainScrl = 0
         else:
             self.mainScrl = None
-        builtins.print = self._sideprt
-        self._cur = 0
-        if self._initSide():
+        if self._run(0, self._initSide):
             self.sideScrl = 0
         else:
             self.sideScrl = None
-        builtins.print = _oldprt
-        self.buf = fix(self.buf)
-        self.sidebuf = fix(self.sidebuf)
 
     @property
     def _scrl(self):

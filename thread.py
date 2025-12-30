@@ -32,6 +32,12 @@ class Thread:
         else:
             self.t = _T(target=self._target, args=args, name=self.__class__.__name__, daemon=True)
 
+    def waiter(self, onfin=True):
+        def wait():
+            if self.done:
+                return onfin
+        return wait
+
     def start(self):
         if self.t is not None:
             self.t.start()
