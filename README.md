@@ -7,7 +7,7 @@ This is purely for educational purposes to see how apk files work, do not use it
 Ensure you have:
 - An apk file of an app that you have permission from the owner that you can look into it
 ```bash
-pip install requests readchar
+pip install -r requirements.txt
 ```
 
 Then run `python3 main.py`
