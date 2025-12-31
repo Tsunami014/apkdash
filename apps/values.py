@@ -100,5 +100,5 @@ class ValueEditor(SelectWind):
         ln = self.getCurLine(1)
         print("\020!!")
         if len(ln) > 0 and ln[0] == '-':
-            print(ln)
+            print(ln.replace('\020...', '\n\020=\n'))
 
