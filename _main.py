@@ -18,7 +18,6 @@ else:
 if 'main' not in globals():
     from app import MainApp
     from gui.wind import ScrlWind
-    from builtins import print as origPrt
     from readchar import key
     main = MainApp()
 
@@ -34,12 +33,12 @@ if 'main' not in globals():
                 if c in main.opens.keys():
                     nam = "\020b*"+nam
                 print(f"\020b{c}\020R: {nam}")
+            self.sel = 1
             return True
         def update(self, k):
             if k == '\x03' or k == key.ESC or k == key.ESC+key.ESC:
-                origPrt("\033[2J", end="", flush=True)
                 quit()
-            if k in main.apps.keys():
+            if self.sel == 1 and k in main.apps.keys():
                 if k in main.opens.keys():
                     toopen = main.opens[k]
                     idx = main.recents.index(toopen)
@@ -61,6 +60,19 @@ if 'main' not in globals():
                     main.idx = 0
                 return
             super().update(k)
+
+        def _initSide(self):
+            self.title = "Config"
+            print("- \020bFolder:\n  "+os.getcwd())
+            if APK_FILE is None:
+                print("- \020bCould not find an avaliable apk file in this folder!")
+            else:
+                print("- \020bApk file:\n  "+APK_FILE)
+                if os.path.exists(OUT_FOLDER):
+                    print("- \020bOut folder:\n  "+OUT_FOLDER)
+                else:
+                    print("- \020bOut folder does not exist! (Try running `Init`)")
+            return True
 
     main._initialise(CreateWind)
 

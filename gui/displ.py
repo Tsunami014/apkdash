@@ -71,9 +71,6 @@ def strcut(txt, wid):
 _inner = re.compile(r'[\[;](0|39|49|[0-9]|2[1-9]|(?:3|4|9|10)[0-7]|[34]8;(?:5;[0-9]+|2;(?:[0-9]+;){3}))[;m]')
 _ansi = re.compile(r'\033(\[[0-9;]*.)')
 def toPrintable(txt):
-    # Remove extra sequences at the end of the string
-    safe = re.sub(END, '', txt)
-
     # Get rid of regular \033s but keep ones relating to colour or bold/stuff (for terminal outputs)
     def repl(match):
         if match.group(0)[-1] != 'm':
@@ -83,9 +80,9 @@ def toPrintable(txt):
         if not kept:
             return ''
         return '\033[' + ';'.join(kept) + 'm'
-    safe = re.sub(_ansi, repl, safe).replace('\033', '�')
+    txt = re.sub(_ansi, repl, txt).replace('\033', '�')
 
-    return safe\
+    txt = txt\
         .replace('\020+', '[\033[32;1m+\033[0m] \033[1m')\
         .replace('\020-', '[\033[34;1m-\033[0m] \033[1m')\
         .replace('\020*', '[\033[33;1m*\033[0m] \033[1m')\
@@ -102,7 +99,10 @@ def toPrintable(txt):
         .replace('\020cy', '\033[93m')\
         .replace('\020cW', '\033[97m')\
         .replace('\020cG', '\033[90m')\
-        .replace('\020cB', '\033[30m')\
+        .replace('\020cB', '\033[30m')
+
+    # Remove extra sequences at the end of the string
+    return re.sub(END, '', txt)\
         .replace('\020', '�')
 
 _perc = re.compile(r'\020%(\d+)/(\d+)%')
@@ -144,7 +144,7 @@ def fixVariable(txt, sect=None):
         .replace('\020=', '═'*w)
 
 
-def fixTitle(tit, wid, right=False):
+def fixTitle(tit, wid, hl, right=False):
     if tit == "":
         return "─"*wid
     if len(tit) > wid-5:
@@ -154,9 +154,12 @@ def fixTitle(tit, wid, right=False):
             ntit = tit[:wid-5]+"..."
     else:
         ntit = tit
+    ntit = " "+ntit+" \020R"
+    if hl:
+        ntit = "\020i\020b"+ntit
     if right:
-        return "─"*(wid-strlen(ntit)-2)+" "+toPrintable(ntit)+"\033[0m "
-    return " "+toPrintable(ntit)+"\033[0m "+"─"*(wid-strlen(ntit)-2)
+        return "─"*(wid-strlen(ntit))+toPrintable(ntit)
+    return toPrintable(ntit)+"─"*(wid-strlen(ntit))
 
 def getSizings():
     size = shutil.get_terminal_size()
@@ -169,19 +172,19 @@ def getSze():
 lastPrtTime = 0
 def printScreen(app):
     w, h, wid1, wid2, = getSizings()
-    out = "\033[0;0H"
+    out = "\033[0;0H\033[?25l"
     if w <= 15 or h <= 3:
         out += "╭"+"─"*w+"╮\n"
         out += ("│"+" "*w+"│\n")*h
         out += "╰"+"─"*w+"╯"
-        print(out, end="\033[0;2H", flush=True)
+        print(out, end="", flush=True)
         return 0
     wind = app.wind
     buf = wind.mainBuffer
     mxidx = 0
     if not wind.sidebuf:
         buf.initialFix(w, h)
-        out += "╭"+fixTitle(wind.titles[1], w)+"╮\n"
+        out += "╭"+fixTitle(wind.titles[1], w, True)+"╮\n"
         for i in range(h):
             prt = buf.popBuf(w)
             if buf:
@@ -189,15 +192,11 @@ def printScreen(app):
             out += "│"+prt+"\033[0m│\n"
         c = "─"
         wind.sel = 1
-        if wind.titles[1] != "":
-            curspos = 3
-        else:
-            curspos = 2
     else:
         sidebuf = wind.sideBuffer
         sidebuf.initialFix(wid1, h)
         buf.initialFix(wid2, h)
-        out += "╭"+fixTitle(wind.titles[0], wid1)+"┬"+fixTitle(wind.titles[1], wid2)+"╮\n"
+        out += "╭"+fixTitle(wind.titles[0], wid1, wind.sel == 0)+"┬"+fixTitle(wind.titles[1], wid2, wind.sel == 1)+"╮\n"
         for i in range(h):
             prt1 = sidebuf.popBuf(wid1)
             prt2 = buf.popBuf(wid2)
@@ -205,18 +204,8 @@ def printScreen(app):
                 mxidx = i
             out += "│"+prt1+"\033[0m│"+prt2+"\033[0m│\n"
         c = "┴"
-        if wind.sel == 0:
-            if wind.titles[0] != "":
-                curspos = 3
-            else:
-                curspos = 2
-        else:
-            if wind.titles[1] != "":
-                curspos = wid1+4
-            else:
-                curspos = wid1+3
-    out += "╰"+fixTitle(app.endPref(), wid1)+c+fixTitle(app.endSuff(), wid2, True)+"╯"
-    print(out, end=f"\033[0;{curspos}H", flush=True)
+    out += "╰"+fixTitle(app.endPref(), wid1, False)+c+fixTitle(app.endSuff(), wid2, False, True)+"╯"
+    print(out, end="", flush=True)
     global lastPrtTime
     lastPrtTime = time.time()
     return mxidx

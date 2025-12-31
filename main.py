@@ -3,6 +3,10 @@ from thread import Lock
 from threading import Thread
 from gui import displ
 import readchar
+from builtins import print
+import atexit
+
+atexit.register(lambda: print("\033[2J\033[?25h", end=""))
 
 def constant_print():
     from time import sleep, time

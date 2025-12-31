@@ -14,7 +14,7 @@ class Init(Procedure):
         self.git = None
         if APK_FILE is None:
             self.title = "Initialising failed"
-            print("\020-No apk file found in current directory! (See `config` for info)")
+            print("\020-No apk file found in current directory!")
             return self.stop()
         return True
 
