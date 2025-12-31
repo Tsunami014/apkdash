@@ -2,7 +2,9 @@ from .displ import fix, strlen, strcut, toPrintable, fixVariable, getSizings
 from enum import IntEnum
 from readchar import key
 import builtins
+import re
 
+_reg = re.compile("\033\\[([0-9;]+)m")
 class Buffer:
     __slots__ = ['txt', 'scroll']
     def __init__(self, txt, sect=None, scroll=0):
@@ -31,14 +33,26 @@ class Buffer:
     def popBuf(self, wid: int, ret=True):
         idx = self.txt.find("\n")
         ridx = strlen(self.txt[:idx])
-        if idx == -1 or wid < ridx:
+        cut = idx == -1 or wid < ridx
+        if cut:
             out, self.txt = strcut(self.txt, wid)
         else:
             out = self.txt[:idx]
             self.txt = self.txt[idx+1:]
         if not ret:
             return
-        return toPrintable(out) + " "*(wid-strlen(out))
+        o = toPrintable(out)
+        if cut:
+            mods = ";".join(re.findall(_reg, o))
+            if mods != '' and not mods.endswith('0'):
+                if ';0;' in mods:
+                    mods = mods[mods.index(';0;')+3:]
+                elif mods.startswith('0;'):
+                    mods = mods[2:]
+                omod = f'\033[{mods}m'
+                self.txt = omod + self.txt
+
+        return o + " "*(wid-strlen(out))
 
 class ExitCodes(IntEnum):
     CREATE = 1

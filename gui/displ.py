@@ -45,15 +45,17 @@ def fix(txt):
         return txt.rstrip("\n")+"\n"
     return txt
 
+ANSI = re.compile("\033\\[[0-9;]*.")
 FANCY = re.compile(r'\020[+\-*~]')
 REG = re.compile(r'\020(?:[birR]|c[rgbcmyWGB])|\033\[[0-9;]*.')
-END = re.compile('\020(?:.|c.)$|\033[0-9;].$')
+END = re.compile('\020(?:.|c.)$')
 def strlen(txt):
     return len(
         re.sub(REG, '',
             re.sub(FANCY, '    ', 
-                re.sub(END, '', txt)
-        )).replace('\020', ' ').replace('\033', ' '))
+                re.sub(END, '',
+                    re.sub(ANSI, '', txt)
+        ))).replace('\020', ' ').replace('\033', ' '))
 
 def strcut(txt, wid):
     if txt == '':
@@ -68,19 +70,19 @@ def strcut(txt, wid):
         i += 1
     return out, txt[len(out):]
 
-_inner = re.compile(r'[\[;](0|39|49|[0-9]|2[1-9]|(?:3|4|9|10)[0-7]|[34]8;(?:5;[0-9]+|2;(?:[0-9]+;){3}))[;m]')
-_ansi = re.compile(r'\033(\[[0-9;]*.)')
+_inner = re.compile(r'[\[;](0|39|49|[0-9]|2[1-9]|(?:3|4|9|10)[0-7]|[34]8;(?:5;[0-9]+|2;(?:[0-9]+;){3}))(?=[;m])')
 def toPrintable(txt):
     # Get rid of regular \033s but keep ones relating to colour or bold/stuff (for terminal outputs)
     def repl(match):
-        if match.group(0)[-1] != 'm':
+        txt = match.group(0)
+        if txt[-1] != 'm':
             return ''
-        params = match.group(1)
+        params = txt[1:]
         kept = _inner.findall(params)
         if not kept:
             return ''
         return '\033[' + ';'.join(kept) + 'm'
-    txt = re.sub(_ansi, repl, txt).replace('\033', '�')
+    txt = re.sub(ANSI, repl, txt)
 
     txt = txt\
         .replace('\020+', '[\033[32;1m+\033[0m] \033[1m')\
