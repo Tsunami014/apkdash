@@ -14,20 +14,19 @@ _toolpth = os.path.abspath(__file__+"/../.tools")
 _dwnldpth = os.path.abspath(_toolpth+"/downloads")
 
 class Runner(Thread):
-    def __init__(self, t: '_ToolBase', *args, runTxt=None, quiet=False):
+    def __init__(self, t: '_ToolBase', *args, runTxt=None, quiet=False, **kwargs):
         self.tool = t
         self.ret = None
         self.runTxt = runTxt
         self.quiet = quiet
-        super().__init__(t._wind, *args)
+        super().__init__(t._wind, *args, **kwargs)
         self.start()
     def main(self, print, *cmd):
         if not self.tool.success:
             self.tool.main(print)
         main = self.tool._run_args(self)
         if main is None:
-            print(f"\020-Could not find run args for tool {self.tool.tool['name']}!")
-            return
+            return self.error("Could not find run args for tool {self.tool.tool['name']}!")
         if self.runTxt is not None:
             print("\020~"+self.runTxt)
         if self.quiet:
@@ -54,12 +53,13 @@ class Runner(Thread):
             print(line, end="")
 
         process.wait()
-
         self.ret = process.returncode
+        if self.ret != 0:
+            return self.error(f"Command errored with error code {self.ret}!")
 
 class ToolRunner(Runner):
-    def __init__(self, wind, name, *args, runTxt=None, quiet=False):
-        super().__init__(Tool(wind, name), *args, runTxt=runTxt, quiet=quiet)
+    def __init__(self, wind, name, *args, runTxt=None, quiet=False, **kwargs):
+        super().__init__(Tool(wind, name), *args, runTxt=runTxt, quiet=quiet, **kwargs)
 
 class Tool:
     def __new__(cls, wind, name):
@@ -111,20 +111,21 @@ class _ToolBase(Thread):
         if self.tool['url_type'] == "Github":
             print("\020~Downloading latest release from github...")
             params = self.tool['gh_params']
-            resp = requests.get(self.tool['url'])
+            try:
+                resp = requests.get(self.tool['url'])
+            except requests.exceptions.RequestException as e:
+                return self.error("Request error!", e)
             try:
                 resp.raise_for_status()
             except requests.exceptions.HTTPError as e:
-                print(f"\020-Failed loading {self.tool['url']}!\n\t{e}")
-                return
+                return self.error(f"Failed loading {self.tool['url']}!", e)
             release_response = json.loads(resp.content)
             assets_url = release_response["assets_url"]
             resp2 = requests.get(assets_url)
             try:
                 resp2.raise_for_status()
             except requests.exceptions.HTTPError as e:
-                print(f"\020-Failed loading {assets_url}!\n\t{e}")
-                return
+                return self.error(f"Failed loading {assets_url}!", e)
             assets_response = json.loads(resp2.content)
             reg = re.compile(params['matches'])
             for asset in assets_response:
@@ -133,8 +134,7 @@ class _ToolBase(Thread):
                     url = asset['browser_download_url']
                     break
             else:
-                print("\020-Could not find an avaliable asset!")
-                return
+                return self.error("Could not find an avaliable asset!")
         else:
             url = self.tool['url']
 
@@ -144,7 +144,10 @@ class _ToolBase(Thread):
         if partial:
             print("\020~Found partial download, attempting to continue...")
             downloaded = os.path.getsize(tmppth)
-            response = requests.get(url, stream=True, headers={"Range": f"bytes={downloaded}-"}, allow_redirects=True)
+            try:
+                response = requests.get(url, stream=True, headers={"Range": f"bytes={downloaded}-"}, allow_redirects=True)
+            except requests.exceptions.RequestException as e:
+                return self.error("Request error!", e)
             if response.status_code != 206: # Server does not support partial complete downloading
                 sze = int(response.headers.get('Content-Range', '/-1').split('/')[-1])
                 if downloaded == sze:
@@ -163,9 +166,8 @@ class _ToolBase(Thread):
             response = requests.get(url, stream=True, allow_redirects=True)
             try:
                 response.raise_for_status()
-            except requests.exceptions.HTTPError as e:
-                print(f"\020-Failed downloading {url}!\n  {e}")
-                return
+            except requests.exceptions.RequestException as e:
+                return self.error("Request error!", e)
 
         p = Progress(self, print, int(response.headers.get('Content-Length', 0)) + downloaded, downloaded)
         with open(tmppth, mode) as file:
@@ -178,10 +180,10 @@ class _ToolBase(Thread):
 
 
 class RegularTool(_ToolBase):
-    def __init__(self, wind, name):
+    def __init__(self, wind, name, **kwargs):
         if not self._setup_tool(name):
-            return super().__init__(wind, skip=True)
-        super().__init__(wind, skip=self._find_tool())
+            return super().__init__(wind, skip=True, **kwargs)
+        super().__init__(wind, skip=self._find_tool(), **kwargs)
 
     def _run_args(self, rn: Runner):
         rt = self.tool['run_type']
@@ -234,9 +236,9 @@ def tryExtract(tmppth, pth, name):
     return True
 
 class JavaTool(_ToolBase):
-    def __init__(self, wind):
+    def __init__(self, wind, **kwargs):
         if not self._setup_tool("java"):
-            return super().__init__(wind, skip=True)
+            return super().__init__(wind, skip=True, **kwargs)
         s = platform.system()
         if s == "Linux":
             nam = "linux"
@@ -246,7 +248,7 @@ class JavaTool(_ToolBase):
             nam = "mac"
         else:
             print(f"\020-Unsupported OS when installing java: {s}. Please install Java separately and ensure `java` is in the path.")
-            return super().__init__(wind, skip=True)
+            return super().__init__(wind, skip=True, **kwargs)
         m = platform.machine().lower()
         if m in ("x86_64", "amd64"):
             arch = "x64"
@@ -254,12 +256,12 @@ class JavaTool(_ToolBase):
             arch = "aarch64"
         else:
             print(f"\020-Unsupported architecture when installing java: {m}. Please install Java separately and ensure `java` is in the path.")
-            return super().__init__(wind, skip=True)
+            return super().__init__(wind, skip=True, **kwargs)
         
         self.tool['url'] = self.tool['url']\
             .replace("{version}", "21").replace("{os}", nam).replace("{arch}", arch)
 
-        super().__init__(wind, skip=self._find_tool())
+        super().__init__(wind, skip=self._find_tool(), **kwargs)
 
     def _run_args(self, rn):
         return [os.path.join(self.pth, "bin", "java")]
@@ -267,11 +269,13 @@ class JavaTool(_ToolBase):
     def main(self, print):
         tmppth = self._download(print)
         self.success = tryExtract(tmppth, self.pth, "Java")
+        if not self.success:
+            return self.error("Failed to extract Java!")
 
 class GitTool(_ToolBase):
-    def __init__(self, wind):
+    def __init__(self, wind, **kwargs):
         if not self._setup_tool("git"):
-            return super().__init__(wind, skip=True)
+            return super().__init__(wind, skip=True, **kwargs)
         found = self._find_tool()
         s = platform.system()
         if s == "Windows":
@@ -284,25 +288,25 @@ class GitTool(_ToolBase):
                 arch = "arm64" 
             else:
                 print(f"\020-Unsupported architecture when installing git: {m}. Please install Git separately and ensure `git` is in the path.")
-                return super().__init__(wind, skip=True)
+                return super().__init__(wind, skip=True, **kwargs)
             self.tool['gh_params']['matches'] = self.tool['gh_params']['matches'].replace("{arch}", arch)
-            return super().__init__(wind, skip=found)
+            return super().__init__(wind, skip=found, **kwargs)
         if not found:
             print("\020-Autodownload for git only works for Windows, and git was not found in path. Please download git separately.")
-        return super().__init__(wind, skip=True)
+        return super().__init__(wind, skip=True, **kwargs)
 
     def _run_args(self, rn):
         return [self.pth]
 
 class LazygitTool(_ToolBase):
-    def __init__(self, wind):
+    def __init__(self, wind, **kwargs):
         if not self._setup_tool("lazygit"):
-            return super().__init__(wind, skip=True)
+            return super().__init__(wind, skip=True, **kwargs)
         found = self._find_tool()
         s = platform.system().lower()
         if s not in ("linux", "windows", "darwin", "freebsd"):
             print(f"\020-Unsupported OS when installing lazygit: {s}. Please install Lazygit separately and ensure `lazygit` is in the path.")
-            return super().__init__(wind, skip=True)
+            return super().__init__(wind, skip=True, **kwargs)
         m = platform.machine().lower()
         if m in ("x86_64", "amd64"):
             arch = "x86_64"
@@ -314,10 +318,10 @@ class LazygitTool(_ToolBase):
             arch = "32-bit"
         else:
             print(f"\020-Unsupported architecture when installing lazygit: {m}. Please install Lazygit separately and ensure `lazygit` is in the path.")
-            return super().__init__(wind, skip=True)
+            return super().__init__(wind, skip=True, **kwargs)
         self.tool['gh_params']['matches'] = self.tool['gh_params']['matches']\
                 .replace("{os}", s).replace("{arch}", arch)
-        return super().__init__(wind, skip=found)
+        return super().__init__(wind, skip=found, **kwargs)
 
     def _run_args(self, rn):
         return [self.pth]
@@ -325,4 +329,6 @@ class LazygitTool(_ToolBase):
     def main(self, print):
         tmppth = self._download(print)
         self.success = tryExtract(tmppth, self.pth, "Lazygit")
+        if not self.success:
+            return self.error("Failed to extract Lazygit!")
 

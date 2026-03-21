@@ -5,8 +5,8 @@
             "name": "Test",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
-            "cwd": "${workspaceFolder}/test",
+            "program": "main.py",
+            "args": ["${workspaceFolder}/test"],
             "console": "integratedTerminal",
             "justMyCode": false
         },

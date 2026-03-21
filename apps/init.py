@@ -24,7 +24,7 @@ class Init(Procedure):
             print("\020+Out folder already exists!")
             return True
         self.title = "Decompiling..."
-        print("\020~Initialising", APK_FILE)
+        print("\020~Decompiling", APK_FILE)
         return tools.ToolRunner(self, "apktool", "d", APK_FILE, runTxt="Decompiling apk...").waiter()
     @step(2)
     def sGetGit(self):
@@ -38,7 +38,7 @@ class Init(Procedure):
             return True
         self.title = "Initialising repo..."
         print("\020~Initialising repo...")
-        self.skip() # Skip checking, because there is definately none
+        self.skip() # Skip next step (checking commits), because there are definately none
         return tools.Runner(self.git, "init", "--initial-branch=main").waiter()
     @step(4)
     def sCheckCommits1(self):

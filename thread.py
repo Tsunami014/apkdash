@@ -22,14 +22,24 @@ class Progress:
 
 Lock = _L()
 class Thread:
-    def __init__(self, wind, *args, skip=False):
+    def __init__(self, wind, *args, skip=False, ignoreErrors=False):
         self._wind = wind
         self.side = wind._cur
+        self.ignoreEr = ignoreErrors
         self._prt = print
         if skip:
             self.t = None
         else:
             self.t = _T(target=self._target, args=args, name=self.__class__.__name__, daemon=True)
+
+    def error(self, msg, e=None):
+        if self.ignoreEr:
+            return
+        self._prt("\020-"+msg)
+        if e is not None:
+            self._prt("\t"+str(e))
+        while True:
+            pass
 
     def waiter(self, onfin=True):
         def wait():

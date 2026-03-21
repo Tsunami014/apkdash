@@ -39,6 +39,7 @@ class Procedure(AutoScrlWind):
         return
     def stop(self):
         self.step = self._stopfn
+        self.steps = iter([])
     def skip(self, amnt=1):
         self.steps = islice(self.steps, amnt, None)
 
