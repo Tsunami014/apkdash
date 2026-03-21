@@ -98,7 +98,5 @@ class Finish(Procedure):
         return True
     
     def _upd(self, k=None):
-        if k == '-':
-            main.openWind('-')
         super()._upd(k)
 
