@@ -9,8 +9,12 @@ def _getapk():
 APK_FILE = _getapk()
 if APK_FILE is not None:
     OUT_FOLDER = APK_FILE[:APK_FILE.rindex(".")]
+    BUILT_APK = os.path.join(OUT_FOLDER, "dist", APK_FILE)
 else:
     OUT_FOLDER = None
+    BUILT_APK = None
+KEYSTORE = os.path.abspath(os.path.join(os.getcwd(), "my.keystore"))
+KEYSTORE_PASSWORD = os.path.abspath(os.path.join(os.getcwd(), "key.pwd"))
 
 if 'main' not in globals():
     from app import MainApp
@@ -37,11 +41,7 @@ if 'main' not in globals():
                 quit()
             if self.sel == 1 and k in main.apps.keys():
                 if k in main.opens.keys():
-                    toopen = main.opens[k]
-                    idx = main.recents.index(toopen)
-                    main.opens.pop(list(main.opens.keys())[idx])
-                    main.recents.pop(idx)
-                    main.setWind(toopen, int(main.idx < len(main.recents)-1))
+                    main.openNew(k)
                 else:
                     main.setWind(main.mkWind(main.apps[k]))
                     main.wind._initialise()
@@ -68,7 +68,11 @@ if 'main' not in globals():
                 if os.path.exists(OUT_FOLDER):
                     print("- \020bOut folder:\n  "+OUT_FOLDER)
                 else:
-                    print("- \020bOut folder does not exist! (Try running `Init`)")
+                    print("- \020bOut folder does not exist! (Run `Init`)")
+                if os.path.exists(BUILT_APK):
+                    print("- \020bBuilt apk:\n  "+BUILT_APK)
+                else:
+                    print("- \020bApk file has never been built (Run `Finish`)")
             return True
 
     main._initialise(CreateWind)

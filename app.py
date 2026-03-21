@@ -152,4 +152,11 @@ class MainApp:
     def mkWind(self, cls):
         wind = cls(self._onWindDel)
         return wind
+    
+    def openNew(self, char):
+        toopen = self.opens[char]
+        idx = self.recents.index(toopen)
+        self.opens.pop(list(self.opens.keys())[idx])
+        self.recents.pop(idx)
+        self.setWind(toopen, int(self.idx < len(self.recents)-1))
 

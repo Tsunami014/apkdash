@@ -1,0 +1,8 @@
+{
+    "name": "Keytool",
+    "cmd": "keytool",
+    "fname": "java/bin/keytool",
+    "run_type": "exe",
+    "url": "https://api.adoptium.net/v3/binary/latest/{version}/ga/{os}/{arch}/jre/hotspot/normal/eclipse",
+    "url_type": "java"
+}
