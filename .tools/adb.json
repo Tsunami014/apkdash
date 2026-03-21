@@ -1,0 +1,8 @@
+{
+    "name": "ADB",
+    "cmd": "adb",
+    "fname": "platform-tools",
+    "run_type": "exe",
+    "url": "https://dl.google.com/android/repository/platform-tools-latest-{os}.zip",
+    "url_type": "direct"
+}

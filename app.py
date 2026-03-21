@@ -153,10 +153,14 @@ class MainApp:
         wind = cls(self._onWindDel)
         return wind
     
-    def openNew(self, char):
-        toopen = self.opens[char]
-        idx = self.recents.index(toopen)
-        self.opens.pop(list(self.opens.keys())[idx])
-        self.recents.pop(idx)
-        self.setWind(toopen, int(self.idx < len(self.recents)-1))
+    def openWind(self, char):
+        if char in self.opens.keys():
+            toopen = self.opens[char]
+            idx = self.recents.index(toopen)
+            self.opens.pop(list(self.opens.keys())[idx])
+            self.recents.pop(idx)
+            self.setWind(toopen, int(self.idx < len(self.recents)-1))
+        else:
+            self.setWind(self.mkWind(self.apps[char]))
+            self.wind._initialise()
 

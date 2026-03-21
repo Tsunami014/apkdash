@@ -1,5 +1,5 @@
 from procedure import Procedure, step
-from _main import APK_FILE, OUT_FOLDER
+from _main import Files
 import tools
 import os
 
@@ -12,7 +12,7 @@ class Init(Procedure):
     def _init(self):
         self.title = "Initialising..."
         self.git = None
-        if APK_FILE is None:
+        if Files.APK_FILE is None:
             self.title = "Initialising failed"
             print("\020-No apk file found!")
             return self.stop()
@@ -20,16 +20,18 @@ class Init(Procedure):
 
     @step(1)
     def sInitial(self):
-        if os.path.exists(OUT_FOLDER):
+        if os.path.exists(Files.OUT_FOLDER):
             print("\020+Out folder already exists!")
             return True
         self.title = "Decompiling..."
-        print("\020~Decompiling", APK_FILE)
-        return tools.ToolRunner(self, "apktool", "d", APK_FILE, runTxt="Decompiling apk...").waiter()
+        print("\020~Decompiling", Files.APK_FILE)
+        return tools.ToolRunner(self, "apktool", "d", Files.APK_FILE, runTxt="Decompiling apk...").waiter()
     @step(2)
     def sGetGit(self):
         self.title = "Getting git..."
-        self.git = tools.GitTool(self)
+        if self.git is None:
+            self.git = tools.GitTool(self)
+            self.git.start()
         return self.git.waiter()
     @step(3)
     def sInitRepo(self):

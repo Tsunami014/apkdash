@@ -1,20 +1,41 @@
 import os
-def _getapk():
-    for i in os.listdir(os.getcwd()):
-        if i.endswith(".apk"):
-            pth = os.path.join(os.getcwd(), i)
-            return os.path.abspath(pth)
-    return None
-
-APK_FILE = _getapk()
-if APK_FILE is not None:
-    OUT_FOLDER = APK_FILE[:APK_FILE.rindex(".")]
-    BUILT_APK = os.path.join(OUT_FOLDER, "dist", APK_FILE)
-else:
+class Files:
+    APK_FILE = None
+    BASENAME = None
     OUT_FOLDER = None
-    BUILT_APK = None
-KEYSTORE = os.path.abspath(os.path.join(os.getcwd(), "my.keystore"))
-KEYSTORE_PASSWORD = os.path.abspath(os.path.join(os.getcwd(), "key.pwd"))
+    PACKAGE = None
+    OUT_APK = None
+    @classmethod
+    def recalculate(cls):
+        cls.APK_FILE = cls._getapk()
+        if cls.APK_FILE is not None:
+            cls.BASENAME = cls.APK_FILE[:cls.APK_FILE.rindex(".")].split('/')[-1]
+            cls.OUT_FOLDER = cls.APK_FILE[:cls.APK_FILE.rindex(".")]
+            cls.PACKAGE = cls._getPkg()
+            cls.OUT_APK = cls.OUT_FOLDER+".out.apk"
+        else:
+            cls.BASENAME = None
+            cls.OUT_FOLDER = None
+            cls.PACKAGE = None
+            cls.OUT_APK = None
+            cls.SIGNED_APK = None
+
+    @classmethod
+    def _getapk(cls):
+        for i in os.listdir(os.getcwd()):
+            if i.endswith(".apk"):
+                pth = os.path.join(os.getcwd(), i)
+                return os.path.abspath(pth)
+        return None
+    @classmethod
+    def _getPkg(cls):
+        manifest = os.path.join(cls.OUT_FOLDER, "AndroidManifest.xml")
+        if os.path.exists(manifest):
+            import xml.etree.ElementTree as ET
+            tree = ET.parse(manifest)
+            root = tree.getroot()
+            return root.attrib.get("package", None)
+        return None
 
 if 'main' not in globals():
     from app import MainApp
@@ -25,6 +46,7 @@ if 'main' not in globals():
     class CreateWind(ScrlWind):
         def _init(self):
             self.title = "New window"
+            Files.recalculate()
             lstpri = -1
             for c, a in main.apps.items():
                 if a.PRIO != lstpri:
@@ -40,11 +62,7 @@ if 'main' not in globals():
             if k == '\x03' or k == key.ESC or k == key.ESC+key.ESC or k == 'Q':
                 quit()
             if self.sel == 1 and k in main.apps.keys():
-                if k in main.opens.keys():
-                    main.openNew(k)
-                else:
-                    main.setWind(main.mkWind(main.apps[k]))
-                    main.wind._initialise()
+                main.openWind(k)
                 return
             if k == ' ':
                 if main.idx > 0:
@@ -59,20 +77,29 @@ if 'main' not in globals():
             super().update(k)
 
         def _initSide(self):
+            home = os.path.expanduser("~")
+            def display(pth):
+                if pth.startswith(home):
+                    return pth.replace(home, "~", 1)
+                return pth
             self.title = "Config"
             print("- \020bFolder:\n  "+os.getcwd())
-            if APK_FILE is None:
-                print("- \020bCould not find an avaliable apk file in this folder!")
+            if Files.APK_FILE is None:
+                print("- \020b\020crCould not find an avaliable apk file in this folder!")
             else:
-                print("- \020bApk file:\n  "+APK_FILE)
-                if os.path.exists(OUT_FOLDER):
-                    print("- \020bOut folder:\n  "+OUT_FOLDER)
+                print("- \020bApk file:\n  "+display(Files.APK_FILE))
+                if os.path.exists(Files.OUT_FOLDER):
+                    print("- \020bOut folder:\n  "+display(Files.OUT_FOLDER))
+                    if Files.PACKAGE is not None:
+                        print("- \020bPackage:\n  "+display(Files.PACKAGE))
+                    else:
+                        print("- \020b\020crCould not find the package!")
+                    if os.path.exists(Files.OUT_APK):
+                        print("- \020bBuilt apk:\n  "+display(Files.OUT_APK))
+                    else:
+                        print("- \020b\020ccApk file has never been built (Run `Finish`)")
                 else:
-                    print("- \020bOut folder does not exist! (Run `Init`)")
-                if os.path.exists(BUILT_APK):
-                    print("- \020bBuilt apk:\n  "+BUILT_APK)
-                else:
-                    print("- \020bApk file has never been built (Run `Finish`)")
+                    print("- \020b\020ccOut folder does not exist! (Run `Init`)")
             return True
 
     main._initialise(CreateWind)

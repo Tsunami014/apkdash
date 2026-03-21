@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
 from selecter import SelectWind
-from _main import OUT_FOLDER
+from _main import Files
 from thread import Thread
 import os
 
@@ -12,7 +12,7 @@ class GetValues(Thread):
         super().__init__(wind, skip=GetValues.values)
     def main(self, print):
         print("\020~Finding all values...")
-        self.iterFold(print, os.path.join(OUT_FOLDER, "res"))
+        self.iterFold(print, os.path.join(Files.OUT_FOLDER, "res"))
         print("\020~Updating ids...")
         for i in self.ids:
             if i in self.values:
@@ -63,11 +63,11 @@ class ValueEditor(SelectWind):
     PRIO = 2
     def _init(self):
         self.title = "Value editor"
-        if OUT_FOLDER is None:
+        if Files.OUT_FOLDER is None:
             self.printed = True
             print("\020-No apk file found in current directory!")
             return True
-        if not os.path.exists(OUT_FOLDER):
+        if not os.path.exists(Files.OUT_FOLDER):
             self.printed = True
             print("\020-No out folder found in current directory!")
             return True

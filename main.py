@@ -36,7 +36,7 @@ import readchar
 from builtins import print
 import atexit
 
-atexit.register(lambda: print("\033[2J\033[?25h", end=""))
+atexit.register(lambda: print("\033[2J\033[?25h\033[0;0H", end="", flush=True))
 
 def constant_print():
     from time import sleep, time

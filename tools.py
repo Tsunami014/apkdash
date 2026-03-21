@@ -6,6 +6,7 @@ import builtins
 import shutil
 import json
 import os
+import stat
 import re
 import zipfile
 import tarfile
@@ -69,6 +70,8 @@ class Tool:
             return GitTool(wind)
         if name == "lazygit":
             return LazygitTool(wind)
+        if name == "adb":
+            return ADBTool(wind)
         return RegularTool(wind, name)
 
 class _ToolBase(Thread):
@@ -108,7 +111,8 @@ class _ToolBase(Thread):
             os.mkdir(_toolpth)
         if not os.path.exists(_dwnldpth):
             os.mkdir(_dwnldpth)
-        if self.tool['url_type'] == "Github":
+        url_type = self.tool['url_type']
+        if url_type == "Github":
             print("\020~Downloading latest release from github...")
             params = self.tool['gh_params']
             try:
@@ -135,8 +139,10 @@ class _ToolBase(Thread):
                     break
             else:
                 return self.error("Could not find an avaliable asset!")
-        else:
+        elif url_type == "direct":
             url = self.tool['url']
+        else:
+            return self.error("Unknown url type: "+url_type)
 
         tmppth = self.pth+".tmp"
 
@@ -210,7 +216,7 @@ class RegularTool(_ToolBase):
         self.success = True
 
 
-def tryExtract(tmppth, pth, name):
+def tryExtract(print, tmppth, pth, name):
     tmp_dir = tmppth+".extract"
     if os.path.exists(tmp_dir):
         shutil.rmtree(tmp_dir)
@@ -268,7 +274,7 @@ class JavaTool(_ToolBase):
 
     def main(self, print):
         tmppth = self._download(print)
-        self.success = tryExtract(tmppth, self.pth, "Java")
+        self.success = tryExtract(print, tmppth, self.pth, "Java")
         if not self.success:
             return self.error("Failed to extract Java!")
 
@@ -328,7 +334,38 @@ class LazygitTool(_ToolBase):
 
     def main(self, print):
         tmppth = self._download(print)
-        self.success = tryExtract(tmppth, self.pth, "Lazygit")
+        self.success = tryExtract(print, tmppth, self.pth, "Lazygit")
         if not self.success:
             return self.error("Failed to extract Lazygit!")
 
+class ADBTool(_ToolBase):
+    def __init__(self, wind, **kwargs):
+        if not self._setup_tool("adb"):
+            return super().__init__(wind, skip=True, **kwargs)
+        s = platform.system()
+        self.ext = ""
+        if s == "Linux":
+            nam = "linux"
+        elif s == "Windows":
+            nam = "windows"
+            self.ext = ".exe"
+        elif s == "Darwin":
+            nam = "darwin"
+        else:
+            print(f"\020-Unsupported OS when installing adb: {s}. Please install ADB separately and ensure `adb` is in the path.")
+            return super().__init__(wind, skip=True, **kwargs)
+        
+        self.tool['url'] = self.tool['url'].replace("{os}", nam)
+
+        super().__init__(wind, skip=self._find_tool(), **kwargs)
+
+    def _run_args(self, rn):
+        return [os.path.abspath(os.path.join(self.pth, "adb"+self.ext))]
+
+    def main(self, print):
+        tmppth = self._download(print)
+        self.success = tryExtract(print, tmppth, self.pth, "ADB")
+        exe = self._run_args(None)[0]
+        if not self.success or not os.path.exists(exe):
+            return self.error("Failed to extract ADB!")
+        os.chmod(exe, os.stat(exe).st_mode | stat.S_IEXEC)
