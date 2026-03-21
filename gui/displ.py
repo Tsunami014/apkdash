@@ -45,17 +45,32 @@ def fix(txt):
         return txt.rstrip("\n")+"\n"
     return txt
 
-ANSI = re.compile("\033\\[[0-9;]*.")
-FANCY = re.compile(r'\020[+\-*~]')
-REG = re.compile(r'\020(?:[birR]|c[rgbcmyWGB])|\033\[[0-9;]*.')
-END = re.compile('\020(?:.|c.)$')
 def strlen(txt):
-    return len(
-        re.sub(REG, '',
-            re.sub(FANCY, '    ', 
-                re.sub(END, '',
-                    re.sub(ANSI, '', txt)
-        ))).replace('\020', ' ').replace('\033', ' '))
+    ln = 0
+    itr = iter(txt)
+    c = None
+    for c in itr:
+        if c == '\033':
+            while c in '\033[0123456789;':
+                c = next(itr, 'Z') # So it breaks
+        elif c == '\020':
+            c = next(itr, 'Z')
+            if c in '+-*~':
+                ln += 4 # `[c] `
+            if c in '!c':
+                next(itr)
+            elif c == '.':
+                if next(itr) == '.' and next(itr) == '.':
+                    while c != '\n' and c != '': # Until newline, it has no length (variable as needed)
+                        c = next(itr, '')
+                    if c != '':
+                        ln += 1 # For the newline
+            elif c == '%':
+                while c != '%':
+                    c = next(itr, '%')
+        else:
+            ln += 1
+    return ln
 
 def strcut(txt, wid):
     if txt == '':
@@ -71,6 +86,8 @@ def strcut(txt, wid):
     return out, txt[len(out):]
 
 _inner = re.compile(r'[\[;](0|39|49|[0-9]|2[1-9]|(?:3|4|9|10)[0-7]|[34]8;(?:5;[0-9]+|2;(?:[0-9]+;){3}))(?=[;m])')
+ANSI = re.compile("\033\\[[0-9;]*.")
+END = re.compile('\020(?:.|c.)$')
 def toPrintable(txt):
     # Get rid of regular \033s but keep ones relating to colour or bold/stuff (for terminal outputs)
     def repl(match):
@@ -105,45 +122,68 @@ def toPrintable(txt):
 
     # Remove extra sequences at the end of the string
     return re.sub(END, '', txt)\
-        .replace('\020', '�')
+        .replace('\020', '')
 
-_perc = re.compile(r'\020%(\d+)/(\d+)%')
-_dots = re.compile(r'(.*)\020\.\.\.(.*)')
 def fixVariable(txt, sect=None):
     w, _, w1, w2 = getSizings()
     if sect is not None:
         w = [w1, w2][sect]
 
-    def handlePerc(match):
-        try:
-            progress = int(match.group(1))
-            max = int(match.group(2))
-        except ValueError:
-            return 'Unknown percent: '+match.group(0)[1:]
-        perc = round(progress / max * 100, 3)
-        t1, t2 = "Progress:", f" {perc}%"
-        o = f"\020b{t1}\020r{t2}"
-        if max > 0 and 0 <= progress < max:
-            wid = w -len(t1)-len(t2) - 5
-            filled = round(progress / max * wid)
-            line = "█"*filled + "░"*(wid-filled)
-            o += "  "+line
-        return o
-    txt = re.sub(_perc, handlePerc, txt)
+    outs = []
+    for ln in txt.split('\n'):
+        idx = ln.find("\020=")
+        if idx != -1:
+            first = ln[:idx]
+            ln = first+'═'*(w-strlen(first))
 
-    def handleDots(match):
-        txt1, txt2 = match.group(1), match.group(2)
-        tlen = strlen(txt1)
-        mxwid = max(w-tlen, 0)
-        if mxwid <= 3:
-            return txt1+"."*mxwid
-        if strlen(txt2) > mxwid:
-            return txt1+strcut(txt2, mxwid-3)[0]+"..."
-        return txt1+txt2
-    txt = re.sub(_dots, handleDots, txt)
+        idx = ln.find("\020...")
+        if idx != -1:
+            bef, aft = ln[:idx], ln[idx+4:]
+        else:
+            bef, aft = ln, None
+        idx = bef.find("\020%")
+        if idx != -1:
+            idx2 = bef.find('%', idx+2)
+            if idx2 != -1:
+                bef1, txt, bef2 = bef[:idx], bef[idx+2:idx2-1], bef[idx2+1:]
+                fail = None
+                spl = txt.split('/')
+                if len(spl) != 2:
+                    fail = "No separator found in progress!"
+                else:
+                    try:
+                        progress = int(spl[0])
+                        mx = int(spl[1])
+                    except ValueError:
+                        fail = "Progress values are not numbers!"
+                if fail is not None:
+                    bef = bef1+fail+bef2
+                else:
+                    value = min(max(progress / mx, 0), 1)
 
-    return txt\
-        .replace('\020=', '═'*w)
+                    perc = round(value * 100, 3)
+                    t1, t2 = "Progress: ", f" {perc}%"
+                    lns = len(t1)+len(t2)
+                    t1 = f"\020b{t1}\020r"
+
+                    wid = w - (strlen(bef1)+strlen(bef2)+lns)
+                    filled = round(value * wid)
+                    line = "█"*filled + "░"*(wid-filled)
+                    bef = bef1+t1+line+t2+bef2
+                    aft = None # No space left, this fills up the whole width
+        whole = bef
+        if aft is not None:
+            left = w - strlen(bef)
+            if left > 0:
+                aftln = strlen(aft)
+                if aftln <= left:
+                    whole += aft
+                elif left < 3:
+                    whole += '.'*left
+                else:
+                    whole += aft[:-3-(aftln-left)]+'...'
+        outs.append(whole)
+    return '\n'.join(outs)
 
 
 def fixTitle(tit, wid, hl, right=False):
@@ -207,7 +247,7 @@ def printScreen(app):
             out += "│"+prt1+"\033[0m│"+prt2+"\033[0m│\n"
         c = "┴"
     out += "╰"+fixTitle(app.endPref(), wid1, False)+c+fixTitle(app.endSuff(), wid2, False, True)+"╯"
-    print(out, end="", flush=True)
+    print(out, end="\033[0;0H", flush=True)
     global lastPrtTime
     lastPrtTime = time.time()
     return mxidx
