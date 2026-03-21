@@ -66,11 +66,11 @@ class ValueEditor(SelectWind):
         if OUT_FOLDER is None:
             self.printed = True
             print("\020-No apk file found in current directory!")
-            return
+            return True
         if not os.path.exists(OUT_FOLDER):
             self.printed = True
             print("\020-No out folder found in current directory!")
-            return
+            return True
         self.vs = GetValues(self)
         self.vs.start()
         self.printed = False

@@ -44,7 +44,7 @@ class Init(Procedure):
     def sCheckCommits1(self):
         self.title = "Checking commits..."
         print("\020~Checking commits...")
-        runner = tools.Runner(self.git, "rev-parse", "--verify", "HEAD")
+        runner = tools.Runner(self.git, "rev-parse", "--verify", "HEAD", quiet=True, ignoreErrors=True)
         return runner.waiter([runner])
     @step(5)
     def sCheckCommits2(self, rnr=None):

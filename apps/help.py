@@ -11,9 +11,9 @@ class Help(ScrlWind):
 \020b\020ccHelp!
 \020b\020cyNavigation
 - Up or down to scroll
+- Ctrl+c or Shift+Q or Esc (may have to press twice to work) to exit the current screen, \020ior if on choose apps screen, will quit the app.\020R
 - Tab to toggle which panel you are looking at (if multiple), you will be able to see at the top which one is highlighted
 - Space to go to the apps screen
 - , or . to switch between open screens (indicator in bottom left)
-- Ctrl+c or Q (capital) or Esc (may have to press twice to work) to exit the current screen, \020ior if on choose apps screen, will quit the app.\020R
 """[1:-1])
 

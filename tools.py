@@ -196,11 +196,11 @@ class RegularTool(_ToolBase):
             if not javtool.success:
                 javtool.main(rn._printLock)
             if javtool.success:
-                return [os.path.join(javtool.pth, "bin", "java"), "-jar", self.pth]
+                return [os.path.abspath(os.path.join(javtool.pth, "bin", "java")), "-jar", os.path.abspath(self.pth)]
             else:
                 rn._printLock("\020-Failed to install Java so cannot run command!")
         elif rt == 'exe':
-            return [self.pth]
+            return [os.path.abspath(self.pth)]
         return None
 
     def main(self, print):
@@ -264,7 +264,7 @@ class JavaTool(_ToolBase):
         super().__init__(wind, skip=self._find_tool(), **kwargs)
 
     def _run_args(self, rn):
-        return [os.path.join(self.pth, "bin", "java")]
+        return [os.path.abspath(os.path.join(self.pth, "bin", "java"))]
 
     def main(self, print):
         tmppth = self._download(print)
@@ -296,7 +296,7 @@ class GitTool(_ToolBase):
         return super().__init__(wind, skip=True, **kwargs)
 
     def _run_args(self, rn):
-        return [self.pth]
+        return [os.path.abspath(self.pth)]
 
 class LazygitTool(_ToolBase):
     def __init__(self, wind, **kwargs):
@@ -324,7 +324,7 @@ class LazygitTool(_ToolBase):
         return super().__init__(wind, skip=found, **kwargs)
 
     def _run_args(self, rn):
-        return [self.pth]
+        return [os.path.abspath(self.pth)]
 
     def main(self, print):
         tmppth = self._download(print)

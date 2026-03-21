@@ -3,10 +3,7 @@ def _getapk():
     for i in os.listdir(os.getcwd()):
         if i.endswith(".apk"):
             pth = os.path.join(os.getcwd(), i)
-            home = os.path.expanduser("~")
-            if pth.startswith(home):
-                pth = os.path.join("~", os.path.relpath(pth, home))
-            return pth
+            return os.path.abspath(pth)
     return None
 
 APK_FILE = _getapk()

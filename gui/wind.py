@@ -74,9 +74,16 @@ class Window:
         self.sidebuf = ""
         self.titles = ["", ""]
         self.sel = 0
-        self.delfn = delfn
+        self._delfn = delfn
+        self.alive = True
+
+    def delfn(self, code=None):
+        self.alive = False
+        self._delfn(code)
 
     def _run(self, cur, fn, *args):
+        if not self.alive:
+            return
         _oldprt = builtins.print
         builtins.print = (self._sideprt, self._bufprt)[cur]
         self._cur = cur
