@@ -113,7 +113,7 @@ class Window:
         elif k == ' ':
             self.delfn(ExitCodes.CREATE)
             return
-        elif k == '\x03' or k == key.ESC or k == key.ESC+key.ESC:
+        elif k == '\x03' or k == key.ESC or k == key.ESC+key.ESC or k == 'Q':
             self.delfn(ExitCodes.CLOSE)
             return
         elif k == ',':

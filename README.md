@@ -12,4 +12,6 @@ pip install -r requirements.txt
 
 Then run `python3 main.py`
 
-You do not need any external tools for this, it will automatically download the tools you do not have
+You do not need any external tools for this, it will automatically download the tools you do not have.
+
+Additionally, there is a help screen avaliable; on the apps screen (if lost press space) and press `?`

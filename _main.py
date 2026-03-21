@@ -36,7 +36,7 @@ if 'main' not in globals():
             self.sel = 1
             return True
         def update(self, k):
-            if k == '\x03' or k == key.ESC or k == key.ESC+key.ESC:
+            if k == '\x03' or k == key.ESC or k == key.ESC+key.ESC or k == 'Q':
                 quit()
             if self.sel == 1 and k in main.apps.keys():
                 if k in main.opens.keys():

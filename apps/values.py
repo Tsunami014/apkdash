@@ -60,7 +60,7 @@ __apps__ = ['ValueEditor']
 class ValueEditor(SelectWind):
     NAME = "Value Editor"
     CHAR = "v"
-    PRIO = 1
+    PRIO = 2
     def _init(self):
         self.title = "Value editor"
         if OUT_FOLDER is None:

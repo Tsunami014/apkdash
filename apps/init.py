@@ -8,7 +8,7 @@ __apps__ = ['Init']
 class Init(Procedure):
     NAME = "Init"
     CHAR = "1"
-    PRIO = -1
+    PRIO = 0
     def _init(self):
         self.title = "Initialising..."
         self.git = None
