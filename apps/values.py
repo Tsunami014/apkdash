@@ -1,5 +1,5 @@
 import xml.etree.ElementTree as ET
-from selecter import SelectWind
+from gui.selecter import SelectWind
 from _main import Files
 from thread import Thread
 import os
@@ -9,7 +9,7 @@ class GetValues(Thread):
     ids = {}
     unuseds = {}
     def __init__(self, wind):
-        super().__init__(wind, skip=GetValues.values)
+        super().__init__(wind, skip=self.values)
     def main(self, print):
         print("\020~Finding all values...")
         self.iterFold(print, os.path.join(Files.OUT_FOLDER, "res"))
@@ -71,11 +71,14 @@ class ValueEditor(SelectWind):
             self.printed = True
             print("\020-No out folder found in current directory!")
             return True
-        self.vs = GetValues(self)
-        self.vs.start()
         self.printed = False
+        self.vs = GetValues(self)
+        self.start = False
         return True
     def _upd(self, k=None):
+        if not self.start:
+            self.start = True
+            self.vs.start()
         if not self.printed and self.vs.done:
             if self.vs.values:
                 for nam, rs in self.vs.values.items():
@@ -83,7 +86,7 @@ class ValueEditor(SelectWind):
                         typtxt = ""
                     else:
                         typtxt = f" ({rs['id']})"
-                    print(f"- \020b{nam}\020R{typtxt}\020... {rs['text']}")
+                    print(f"- \020...\020b{nam}\020R{typtxt} {rs['text']}")
                 if self.vs.unuseds:
                     print("\n\020=\n")
             if self.vs.unuseds:

@@ -42,11 +42,8 @@ class SelectWind(ScrlWind):
         return buf.split('\n')[scrl]
 
     def getMaxScrl(self):
-        _, h, = getSze()
-        mx = super().getMaxScrl()
-        if mx <= h:
-            return mx
-        return mx+h-1
+        buf = (self.sideBuffer, self.mainBuffer)[self.sel]
+        return max(buf.txt.count("\n")-1, 0)
 
     def findScrl(self, txt, sect, scrl):
         _, h, = getSze()
@@ -56,7 +53,7 @@ class SelectWind(ScrlWind):
         elif self.sidebuf:
             w = wid2
         hh = h//2
-        mx = Buffer(txt).howManyRows(w)
+        mx = Buffer(txt, sect).howManyRows(w)
         if mx <= h:
             return 0
         if scrl <= hh:

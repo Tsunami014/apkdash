@@ -1,5 +1,6 @@
-from threading import Thread as _T, Lock as _L
+import threading
 from _main import main
+import ctypes
 
 class Progress:
     def __init__(self, t: 'Thread', print, max, initial=0):
@@ -20,7 +21,7 @@ class Progress:
         self()
 
 
-Lock = _L()
+Lock = threading.Lock()
 class Thread:
     def __init__(self, wind, *args, skip=False, ignoreErrors=False):
         self._wind = wind
@@ -30,7 +31,7 @@ class Thread:
         if skip:
             self.t = None
         else:
-            self.t = _T(target=self._target, args=args, name=self.__class__.__name__, daemon=True)
+            self.t = threading.Thread(target=self._target, args=args, name=self.__class__.__name__, daemon=True)
 
     def error(self, msg, e=None):
         if self.ignoreEr:
@@ -53,12 +54,36 @@ class Thread:
         else:
             self._end()
 
+    def stop(self):
+        if self.done:
+            return
+
+        for tid, tobj in threading._active.items():
+            if tobj is self.t:
+                break
+        else:
+            raise AssertionError(
+                "Could not determine the thread's id!"
+            )
+
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tid), ctypes.py_object(KeyboardInterrupt))
+        if res == 0:
+            raise ValueError("invalid thread id")
+        elif res != 1:
+            # "if it returns a number greater than one, you're in trouble,
+            # and you should call it again with exc=NULL to revert the effect"
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tid), None)
+            raise SystemError("PyThreadState_SetAsyncExc failed")
+
     @property
     def done(self):
         return self.t is None or not self.t.is_alive()
 
     def _target(self, *args):
-        self.main(self._printLock, *args)
+        try:
+            self.main(self._printLock, *args)
+        except KeyboardInterrupt:
+            return
         with Lock:
             self.t = None # So self.done is True
             self._end()

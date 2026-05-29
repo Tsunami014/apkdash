@@ -1,56 +1,11 @@
 from procedure import Procedure, step
-from _main import main, Files
+from _main import Files
 import tools
 import os
 import shutil
 
-__apps__ = ['Finish', 'ADB']
+__apps__ = ['Finish']
 
-class ADB(Procedure):
-    NAME = "ADB Reinstaller"
-    CHAR = "-"
-    PRIO = 0
-    def _init(self):
-        self.adb = None
-        if Files.OUT_APK is None or not os.path.exists(Files.OUT_APK):
-            self.title = "Reinstalling failed"
-            print("\020-No built apk found! Run `Finish`")
-            return self.stop()
-        if Files.PACKAGE is None:
-            self.title = "Reinstalling failed"
-            print("\020-Package name could not be discerned!")
-            return self.stop()
-        self.title = "Reinstalling..."
-        return True
-
-    @step(1)
-    def sGetAdb(self):
-        self.title = "Getting adb..."
-        if self.adb is None:
-            self.adb = tools.ADBTool(self)
-            self.adb.start()
-        return self.adb.waiter()
-    @step(2)
-    def sUninstallExisting(self):
-        self.title = "Uninstalling existing app..."
-        print("\020~Uninstalling existing app (if exists)")
-        return tools.Runner(self.adb, "uninstall", Files.PACKAGE, ignoreErrors=True).waiter()
-    @step(3)
-    def sInstallNew(self):
-        self.title = "Installing new app..."
-        print("\020~Installing new app")
-        return tools.Runner(self.adb, "install", Files.OUT_APK).waiter()
-    @step(4)
-    def sLaunch(self):
-        self.title = "Launching app..."
-        print("\020~Launching app")
-        return tools.Runner(self.adb, "shell", "monkey", "-p", Files.PACKAGE, "-c", "android.intent.category.LAUNCHER", "1").waiter()
-
-    @step(999)
-    def sFin(self):
-        self.title = "Reinstalled!"
-        print("\020+The built app should now be reinstalled onto your device!")
-        return True
 
 class Finish(Procedure):
     NAME = "Finish"
@@ -96,7 +51,4 @@ class Finish(Procedure):
         self.title = "Finished!"
         print("\020+Finished! The output apk file is in", self.BUILT_APK)
         return True
-    
-    def _upd(self, k=None):
-        super()._upd(k)
 

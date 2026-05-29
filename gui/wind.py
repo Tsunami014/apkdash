@@ -217,7 +217,7 @@ class AutoScrlWind(ScrlWind):
         super()._bufprt(*args, **kwargs)
         self.mainScrl = -1
     def _sideprt(self, *args, **kwargs):
-        super()._bufprt(*args, **kwargs)
+        super()._sideprt(*args, **kwargs)
         self.sideScrl = -1
     def update(self, k):
         if self._scrl == -1:
@@ -225,5 +225,5 @@ class AutoScrlWind(ScrlWind):
                 return
             if k in (key.UP, key.PAGE_UP):
                 self._scrl = self.getMaxScrl()
-        super().update(k)
+        ScrlWind.update(self, k)
 

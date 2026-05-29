@@ -29,6 +29,7 @@ cG colour Grey
 cB colour Black (invisible)
 """
 from builtins import print # So later stuffing around won't mess up the core printing
+import unicodedata
 import shutil
 import time
 import re
@@ -61,7 +62,7 @@ def strlen(txt):
                 next(itr)
             elif c == '.':
                 if next(itr) == '.' and next(itr) == '.':
-                    while c != '\n' and c != '': # Until newline, it has no length (variable as needed)
+                    while c != '\n' and c != '': 
                         c = next(itr, '')
                     if c != '':
                         ln += 1 # For the newline
@@ -70,6 +71,8 @@ def strlen(txt):
                     c = next(itr, '%')
         else:
             ln += 1
+            if ord(c) >= 128:
+                ln += 1 + int(unicodedata.east_asian_width(c) in ('F', 'W'))
     return ln
 
 def strcut(txt, wid):
@@ -189,11 +192,14 @@ def fixVariable(txt, sect=None):
 def fixTitle(tit, wid, hl, right=False):
     if tit == "":
         return "─"*wid
-    if len(tit) > wid-5:
+    if strlen(tit) > wid-5:
         if right:
-            ntit = "..."+tit[-wid+5:]
+            while strlen(tit) > wid - 5:
+                tit = tit[1:]
+            ntit = "..." + tit
         else:
-            ntit = tit[:wid-5]+"..."
+            ntit, _ = strcut(tit, wid-5)
+            ntit += "..."
     else:
         ntit = tit
     ntit = " "+ntit+" \020R"
